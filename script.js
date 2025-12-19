@@ -897,8 +897,9 @@ function saveReviewedVideo()
         if (window.AndroidInterface?.saveVideo)
         {
             window.AndroidInterface.saveVideo(base64data, gameState.currentGameId.toString());
+            // close modal after handing off to native
         } else {
-            console.error("Android interface not found for saving video. Falling back to browser download.");
+            console.error("Android interface not found for saving video. Creating explicit download link.");
             // Blob URL 생성
             const fileUrl = URL.createObjectURL(blob);
 
@@ -914,21 +915,43 @@ function saveReviewedVideo()
                 console.error('gameHistory 저장 실패:', e);
             }
 
-            // 2) 자동 다운로드 트리거 (브라우저에서 파일 받기)
+            // 2) 명시적 다운로드 버튼 생성 (사용자가 클릭해야 함)
             try {
-                const ext = blob.type && blob.type.includes('mp4') ? 'mp4' : 'webm';
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = fileUrl;
-                a.download = `record_${gameState.currentGameId || Date.now()}.${ext}`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                logTest && typeof logTest === 'function' && logTest('브라우저 다운로드가 시작되었습니다.');
+                const controls = document.querySelector('#videoReviewModal .video-controls');
+                if (controls) {
+                    let dl = document.getElementById('explicitDownloadLink');
+                    if (!dl) {
+                        dl = document.createElement('a');
+                        dl.id = 'explicitDownloadLink';
+                        dl.className = 'modal-action';
+                        dl.style.marginLeft = '8px';
+                        dl.style.display = 'inline-block';
+                        controls.appendChild(dl);
+                    }
+                    const ext = blob.type && blob.type.includes('mp4') ? 'mp4' : 'webm';
+                    dl.href = fileUrl;
+                    dl.download = `record_${gameState.currentGameId || Date.now()}.${ext}`;
+                    dl.textContent = '다운로드(Download)';
+                    dl.target = '_blank';
+                    logTest && typeof logTest === 'function' && logTest('다운로드 버튼이 준비되었습니다. 클릭하여 파일을 저장하세요.');
+                } else {
+                    // fallback: expose link in test panel if modal controls missing
+                    const dlTest = document.getElementById('downloadLinkTest');
+                    if (dlTest) {
+                        dlTest.href = fileUrl;
+                        const ext = blob.type && blob.type.includes('mp4') ? 'mp4' : 'webm';
+                        dlTest.download = `record_${gameState.currentGameId || Date.now()}.${ext}`;
+                        dlTest.style.display = 'block';
+                        dlTest.textContent = `다운로드 파일: ${dlTest.download}`;
+                        logTest && typeof logTest === 'function' && logTest('테스트 패널에 다운로드 링크가 생성되었습니다.');
+                    }
+                }
             } catch (e) {
-                console.error('브라우저 다운로드 실패:', e);
-                logTest && typeof logTest === 'function' && logTest('브라우저 다운로드 실패: ' + e.message);
+                console.error('다운로드 링크 생성 실패:', e);
+                logTest && typeof logTest === 'function' && logTest('다운로드 링크 생성 실패: ' + e.message);
             }
+            // NOTE: do NOT auto-close the modal so user can click download explicitly
+            return;
         }
 
         // 6. 저장 요청 후, 모달을 닫고 데이터를 초기화
@@ -1298,7 +1321,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('recordStopButton').addEventListener('click', pauseRecordingAndShowReview);
     document.getElementById('slowPlayBtn').addEventListener('click', () => { document.getElementById('reviewVideo').playbackRate = 0.5; });
     document.getElementById('normalPlayBtn').addEventListener('click', () => { document.getElementById('reviewVideo').playbackRate = 1.0; });
-//    document.getElementById('closeReviewBtn').addEventListener('click', closeReviewAndResumeRecording);
+    document.getElementById('closeReviewBtn').addEventListener('click', closeReviewAndResumeRecording);
     
     const saveVideoButton = document.querySelector('#videoReviewModal .modal-action[onclick="saveVideo()"]');
     if (saveVideoButton) {
@@ -1515,4 +1538,4 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-
+});
