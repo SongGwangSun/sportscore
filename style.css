@@ -1,0 +1,427 @@
+/* General Body and Screen Styles */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: #f0f2f5;
+    overflow: hidden;
+    -webkit-user-select: none;
+    user-select: none;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+}
+
+.screen {
+    display: none !important; /* Use JS to control visibility */
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    box-sizing: border-box;
+    overflow-y: auto; /* Allow scrolling on main screens */
+}
+
+.screen.active {
+    display: flex !important;
+}
+
+/* --- Game End Screen --- */
+#gameEnd {
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    position: relative;
+}
+
+#confettiCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.winner-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 2rem;
+    text-align: center;
+    z-index: 2;
+    animation: fadeInScale 0.5s ease-out;
+}
+
+@keyframes fadeInScale {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.winner-card h1 {
+    font-size: 3rem;
+    font-weight: 900;
+    letter-spacing: 0.2em;
+    color: #ffd700;
+    text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+    margin-bottom: 0.5rem;
+}
+
+.winner-name-large {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.final-score-display {
+    font-size: 1.2rem;
+}
+
+.end-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    z-index: 2;
+}
+
+.end-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.end-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Scrollable lists within modals */
+#historyList, #savedNamesList, #pickerNamesList {
+    overflow-y: auto;
+    max-height: 60vh; /* Adjust as needed */
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 0.5rem;
+}
+
+/* Video Review Modal Specifics */
+#videoReviewModal .modal-content {
+    padding-bottom: 1rem;
+}
+#reviewVideo {
+    width: 100%;
+    max-height: 60vh;
+    border-radius: 8px;
+    background: #000;
+}
+.video-controls {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin: 1rem 0;
+}
+/* --- Other Screens & Styles (Existing) --- */
+/* ... (all other styles remain the same) ... */
+#gameSelection {
+    align-items: center;
+    padding: 1rem;
+}
+
+.game-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    max-width: 600px;
+}
+
+.game-btn {
+    background: #fff;
+    border: 2px solid transparent;
+    border-radius: 12px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 120px;
+    height: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.game-btn.selected, .game-btn:hover {
+    border-color: #667eea;
+    transform: translateY(-4px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.game-icon { font-size: 2.5rem; }
+.game-name { font-size: 1rem; text-align: center; margin-top: 0.5rem; }
+
+.rule-display-container {
+    display: none; /* Hidden by default */
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 600px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.rule-display-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.rule-display-description h3 { margin-top: 0; margin-bottom: 0.1rem; }
+.rule-display-description p, .rule-display-description ul { margin: 0 0 1rem 0; padding-left: 1rem; }
+
+#gameSettings {
+    background: #f0f2f5;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.settings-header {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 1rem;
+    flex-shrink: 0;
+    max-width: 600px;
+}
+
+.settings-header .back-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    margin-right: 0.5rem;
+}
+
+.settings-header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.settings-content {
+    width: 100%;
+    max-width: 600px;
+    padding: 0 1rem 2rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.settings-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.settings-card h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #6c757d;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+}
+
+.setting-item label {
+    font-weight: 500;
+    color: #495057;
+}
+
+.slider-wrapper { display: flex; flex-direction: column; align-items: flex-end; flex: 1; margin-left: 1rem; }
+.slider-value { font-size: 1.2rem; font-weight: 700; color: #495057; margin-bottom: 0.5rem; }
+.slider-container { display: flex; align-items: center; width: 100%; }
+.slider-container input[type="range"] { flex: 1; -webkit-appearance: none; appearance: none; height: 8px; background: #dee2e6; border-radius: 4px; outline: none; cursor: pointer; }
+.slider-container input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; background: #667eea; border-radius: 50%; }
+.slider-label-start, .slider-label-end { font-size: 0.9rem; color: #6c757d; margin: 0 0.5rem; }
+
+.radio-group-modern { display: flex; gap: 0.5rem; }
+.radio-group-modern input[type="radio"] { display: none; }
+.radio-group-modern label { padding: 0.5rem 1rem; border: 1px solid #ced4da; border-radius: 20px; cursor: pointer; transition: all 0.2s; }
+.radio-group-modern input[type="radio"]:checked + label { background: #667eea; color: #fff; border-color: #667eea; }
+
+.player-input-group { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
+.player-input-group input { flex: 1; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 8px; }
+.list-btn { background: #e9ecef; border: none; border-radius: 8px; width: 44px; height: 44px; font-size: 1.2rem; cursor: pointer; }
+.apply-btn { width: 100%; padding: 0.75rem; background: #f8f9fa; border: 1px solid #ced4da; border-radius: 8px; margin-top: 0.5rem; cursor: pointer; }
+
+.text-input-modern { flex: 1; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 8px; margin-left: 1rem; }
+
+.switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider.round { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 28px; }
+.slider.round:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+input:checked + .slider { background-color: #667eea; }
+input:checked + .slider:before { transform: translateX(22px); }
+
+.start-btn-modern { width: 100%; padding: 1rem; font-size: 1.2rem; font-weight: 700; color: #fff; background: #667eea; border: none; border-radius: 12px; cursor: pointer; margin-top: 1rem; }
+.start-btn-modern1 { width: 20%; padding: 1rem; font-size: 1.2rem; font-weight: 100; color: #fff; background: #667eea; border: none; border-radius: 12px; cursor: pointer; margin-top: 1rem; }
+
+#scoreboard { display: flex; flex-direction: column; width: 100%; height: 100%; background: #fff; position: relative; }
+.game-notification { visibility: hidden; opacity: 0; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.7); color: white; padding: 1rem 2rem; border-radius: 20px; font-size: 1.5rem; font-weight: bold; z-index: 2000; transition: visibility 0s, opacity 0.5s; }
+.game-notification.show { visibility: visible; opacity: 1; }
+
+.scoreboard-top-bar { display: none; justify-content: space-between; align-items: center; padding: 0.5rem 1rem; background: #f8f9fa; border-bottom: 1px solid #dee2e6; flex-shrink: 0; }
+.game-info { display: flex; align-items: center; gap: 1rem; font-size: 0.9rem; font-weight: 600; color: #495057; }
+.scoreboard-main-controls { display: flex; align-items: center; gap: 0.5rem; }
+#recordStopButton { display: none; }
+
+.scoreboard-main-area { display: flex; flex-grow: 1; gap: 0.5rem; padding: 0.5rem; }
+.player-score { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #f8f9fa; border-radius: 12px; padding: 1rem; cursor: pointer; transition: background-color 0.2s, color 0.2s; }
+.player-score:active { background-color: #e9ecef; }
+.player-info { text-align: center; margin-bottom: 0.5rem; }
+.player-name { font-size: 1.5rem; font-weight: 700; color: #212529; }
+.set-score { font-size: 1rem; color: #6c757d; display: block; }
+.score-display { font-size: 10rem; font-weight: 900; color: #212529; line-height: 1; transition: color 0.2s; }
+.score-display.serve { color: #e11d48; }
+
+.control-buttons { display: flex; justify-content: space-around; padding: 0.5rem; background: #f8f9fa; border-top: 1px solid #dee2e6; }
+.control-btn { background: none; border: none; font-size: 1.5rem; padding: 0.5rem; cursor: pointer; border-radius: 50%; width: 50px; height: 50px; display: flex; justify-content: center; align-items: center; transition: background-color 0.2s; }
+.control-btn:hover { background-color: #e9ecef; }
+
+.menu-container { position: relative; }
+.menu-dropdown { display: none; position: absolute; right: 0; top: 100%; background: #fff; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); z-index: 1100; min-width: 150px; }
+.menu-dropdown button { display: block; width: 100%; padding: 0.75rem 1rem; background: none; border: none; text-align: left; cursor: pointer; }
+.menu-dropdown button:hover { background: #f0f0f0; }
+/* style.css 파일에 추가 */
+
+/* --- 음성인식 설정 화면 스타일 --- */
+.voice-test-area {
+    text-align: center;
+    margin: 20px 0;
+}
+.modern-btn-mic {
+    background-color: #d32f2f; /* 강렬한 빨간색 */
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 50px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+.modern-btn-mic:hover {
+    background-color: #b71c1c;
+}
+.modern-btn-mic.listening {
+    background-color: #28a745; /* 녹색 */
+    animation: pulse 1.5s infinite;
+}
+.highlight-text {
+    font-weight: bold;
+    color: #007bff;
+    font-size: 1.2em;
+}
+.voice-guide-area {
+    margin-top: 20px;
+}
+.chip-btn {
+    background-color: #e0e0e0;
+    color: #333;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 16px;
+    margin: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+.chip-btn:hover {
+    background-color: #bdbdbd;
+}
+
+/* --- 스코어보드 화면 음성인식 버튼 --- */
+#voiceControlBtn.active {
+    background-color: #28a745; /* 활성화 시 녹색 */
+    color: white;
+}
+
+/* 펄스 애니메이션 */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 15px rgba(40, 167, 69, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+    }
+}
+
+/* --- 메인 메뉴 버튼 레이아웃 --- */
+.main-menu-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+.menu-btn {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+}
+.menu-btn:hover {
+    background-color: #5a6268;
+}
+
+
+@media (orientation: portrait) {
+    .scoreboard-top-bar { display: none; }
+    .scoreboard-main-area { flex-direction: column; }
+    .score-display { font-size: 8rem; }
+}
+
+@media (orientation: landscape) {
+    .scoreboard-top-bar { display: flex; }
+    .control-buttons { display: none; }
+    .scoreboard-main-area { flex-direction: row; }
+    .player-name { font-size: 2rem; }
+    .set-score { font-size: 1.2rem; }
+    .score-display { font-size: 12rem; }
+}
+
+#gameSelection, .modal { display: none; }
+.screen.active, .modal.active { display: flex; }
+.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+.modal-content { background: #fff; padding: 2rem; border-radius: 8px; max-width: 90vw; }
+
+/* --- Data List Styles --- */
+.saved-name-item, .picker-name-item { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border-bottom: 1px solid #e9ecef; cursor: pointer; }
+.delete-btn { background: #ff4d4d; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; }
+
+.history-item { background: #f8f9fa; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; cursor: pointer; }
+.history-item-header { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 0.5rem; }
+.history-item-body p { margin: 0.25rem 0; }
+.history-memo { font-style: italic; color: #6c757d; }
+
+#videoReviewModal .modal-content, #historyDetailModal .modal-content {
+    width: 100%;
+    max-width: 600px;
+}

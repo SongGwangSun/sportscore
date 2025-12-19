@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>SportScore</title>
+    <link rel="stylesheet" href="style.css">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SportScore">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-touch-fullscreen" content="yes">
+    <meta name="apple-mobile-web-app-orientations" content="portrait">
+</head>
+
+<body>
+<!-- 게임 선택 화면 -->
+<div id="gameSelection" class="screen">
+    <div style="display:flex;align-items:center;gap:0.5rem;width:100%;justify-content:space-between;">
+        <img src="images/SportScore.png" alt="Sport Score 로고"
+             style="height:60px;margin:0; /* 적절한 높이 설정 */"
+             class="sport-score-banner">
+        <!--        <h1 style="margin:0;">Sport Score</h1>-->
+
+        <button id="gameMenuBtn" class="control-btn"
+                style="width:auto;height:auto;padding:8px 10px;border-radius:10px;"
+                onclick="toggleGameMenu()"
+                title="메뉴(Menu)">☰
+        </button>
+    </div>
+
+    <div id="gameMenu"
+         style="display:none;position:absolute;top:56px;right:20px;background:#fff;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.12);padding:8px;z-index:1200;">
+        <button class="modal-action" style="display:block;width:100%;margin-bottom:6px;"
+                onclick="openSavedNamesManager();toggleGameMenu()">선수 관리(Players)
+        </button>
+        <button class="modal-action" style="display:block;width:100%;margin-bottom:6px;"
+                onclick="showHistory();toggleGameMenu()">기록 보기(Match record)
+        </button>
+        <button class="modal-action" style="display:block;width:100%;margin-bottom:6px;"
+                onclick="showScreen('voiceLanguage');toggleGameMenu()">음성 안내(Text2Speech)
+        </button>
+        <!-- "음성인식 설정" 버튼 추가 -->
+        <button class="modal-action" style="display:block;width:100%;margin-bottom:6px;"
+                onclick="showScreen('voiceSettings');toggleGameMenu()">음성 인식(Voice2Score)
+        </button>
+        <!-- ... 기존 '경기기록', '앱 정보' 버튼 ... -->
+
+        <button class="modal-action" style="display:block;width:100%;"
+                onclick="showAbout();toggleGameMenu()">About
+        </button>
+    </div>
+
+    <div class="game-buttons">
+        <button class="game-btn" onclick="displayGameInfo('badminton')" type="button">
+            <div class="game-icon">🏸</div>
+            <div class="game-name">배드민턴<br>Badminton</div>
+        </button>
+        <button class="game-btn" onclick="displayGameInfo('pingpong')" type="button">
+            <div class="game-icon">🏓</div>
+            <div class="game-name">탁구<br>TableTennis</div>
+        </button>
+        <button class="game-btn" onclick="displayGameInfo('jokgu')" type="button">
+            <div class="game-icon">⚽️</div>
+            <div class="game-name">족구<br>Jokgu</div>
+        </button>
+        <button class="game-btn" onclick="displayGameInfo('pickleball')" type="button">
+            <div class="game-icon">🥒</div>
+            <div class="game-name">피클볼<br>PickleBall</div>
+        </button>
+        <button class="start-btn-modern" onclick="showGameSettings()">게임 설정(Game settings)</button>
+    </div>
+    <!-- 경기 규칙 설명 영역 -->
+    <div id="ruleDisplay" class="rule-display-container">
+        <img id="ruleDisplayImage" src="" alt="Game Image" class="rule-display-image">
+        <div id="ruleDisplayDescription" class="rule-display-description"></div>
+        <button class="start-btn-modern" onclick="showGameSettings()">게임 설정(Game settings)</button>
+    </div>
+</div>
+
+<!-- "음성인식 설정" 화면 새로 추가 -->
+<div id="voiceSettings" class="screen">
+    <header class="settings-header">
+        <button class="back-btn" onclick="showGameSelection()" title="이전(Back)">←</button>
+        <h1>음성인식 설정(Voice recognition settings)</h1>
+    </header>
+    <div class="content-body">
+        <div class="settings-card">
+            <h2>음성인식 테스트</h2>
+            <p class="description">
+                아래 버튼을 누르고 "원포인트" 또는 "투포인트"라고 발음해보세요.<br>
+                Click the button below and pronounce it as "one point" or "two point."<br>
+
+                정확한 발음 안내를 위해 단어를 눌러 들어볼 수 있습니다.<br>
+                You can click on a word to hear its pronunciation for accurate pronunciation
+                guidance.<br>
+
+                주의) 시끄러운 장소에서는 사용을 자제해주시기 바랍니다. <br>
+                Caution) Please refrain from using in noisy places.
+            </p>
+            <div class="voice-test-area">
+                <button id="voiceTestBtn" class="modern-btn-mic">🎤 발음 테스트(pronunciation test)
+                </button>
+                <p>인식된 단어(recognized words): <span id="recognizedWord"
+                                                   class="highlight-text">...</span></p>
+            </div>
+            <div class="voice-guide-area">
+                <p>발음 안내 (클릭하여 듣기):<br>
+                    Pronunciation Guide (Click to Listen)
+                </p>
+                <button class="chip-btn" onclick="testVoice('원포인트')">원포인트(One point)</button>
+                <button class="chip-btn" onclick="testVoice('투포인트')">투포인트(Two point)</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 게임 설정 화면 -->
+<!--    <div id="gameSettings" class="screen">-->
+<!--        <header class="settings-header">-->
+<!--            <button class="back-btn" onclick="showGameSelection()" title="이전(Back)">←</button>-->
+<!--            <h1 id="selectedGameTitle">게임 설정</h1>-->
+<!--        </header>-->
+<div id="gameSettings" class="screen">
+    <header class="settings-header"
+            style="display: flex; justify-content: space-between; align-items: center; padding: 0 16px;">
+        <button class="back-btn" onclick="showGameSelection()" title="이전(Back)">←</button>
+        <h1 id="selectedGameTitle"
+            style="margin: 0; font-size: 1.25rem; position: absolute; left: 50%; transform: translateX(-50%);">
+            게임 설정(Game settings)</h1>
+        <button class="start-btn-modern1" onclick="startGame()"
+                style="margin-left: auto; padding: 8px 16px; font-size: 14px;">경기 시작(Start game)
+        </button>
+    </header>
+    <div class="settings-content">
+        <section class="settings-card">
+            <h2>게임 규칙(Game rules)</h2>
+            <div class="setting-item">
+                <label for="winScoreRange">승리 점수(victory score)</label>
+                <div class="slider-wrapper">
+                    <span class="slider-value" id="winScoreValue">11</span>
+                    <div class="slider-container">
+                        <span class="slider-label-start">1</span>
+                        <input type="range" id="winScoreRange" min="1" max="25" value="11">
+                        <span class="slider-label-end">25</span>
+                    </div>
+                </div>
+            </div>
+            <div class="setting-item">
+                <label for="totalSetsRange">총 세트 수(Total number of sets)</label>
+                <div class="slider-wrapper">
+                    <span class="slider-value" id="totalSetsValue">3</span>
+                    <div class="slider-container">
+                        <span class="slider-label-start">1</span>
+                        <input type="range" id="totalSetsRange" min="1" max="7" step="2" value="3">
+                        <span class="slider-label-end">7</span>
+                    </div>
+                </div>
+            </div>
+            <div class="setting-item" id="matchTypeGroup">
+                <label>경기 방식(How to Play)</label>
+                <div class="radio-group-modern">
+                    <input type="radio" id="single" name="matchType" value="single" checked>
+                    <label for="single">단식(Single)</label>
+                    <input type="radio" id="double" name="matchType" value="double">
+                    <label for="double">복식(Doubles)</label>
+                </div>
+            </div>
+        </section>
+        <section class="settings-card">
+            <h2>선수 등록(Player registration)</h2>
+            <div class="player-input-group">
+                <label for="playerReg1"></label><input type="text" id="playerReg1"
+                                                       placeholder="Player 1">
+                <button class="list-btn" onclick="openPlayerNamesPicker('playerReg1')">📖</button>
+            </div>
+            <div class="player-input-group">
+                <label for="playerReg2"></label><input type="text" id="playerReg2"
+                                                       placeholder="Player 2">
+                <button class="list-btn" onclick="openPlayerNamesPicker('playerReg2')">📖</button>
+            </div>
+            <button class="apply-btn" onclick="applyPlayerNames()">이름 적용(Apply name)</button>
+        </section>
+        <section class="settings-card">
+            <h2>추가 옵션(Option)</h2>
+            <div class="setting-item">
+                <label for="setMemoInput">경기 메모(match notes)</label>
+                <input type="text" id="setMemoInput" class="text-input-modern"
+                       placeholder="이번 경기에 대한 메모(Notes on this match)">
+            </div>
+            <div class="setting-item">
+                <label for="voiceRecToggle">음성인식 사용(Use voice recognition)</label>
+                <label class="switch">
+                    <input type="checkbox" id="voiceRecToggle">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+            <!--            </div>-->
+            <div class="setting-item">
+                <label for="enableRecording">동영상 녹화(Video recording)</label>
+                <label class="switch"><input type="checkbox" id="enableRecording">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+            <div id="recordingOptions" style="display: none;">
+                <div class="setting-item">
+                    <label for="recordQuality">화질(Quality)</label>
+                    <select id="recordQuality" class="text-input-modern">
+                        <option value="medium">중간(Middle)</option>
+                        <option value="low">낮음(Low)</option>
+                        <option value="high">높음(High)</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label for="cameraFacing">카메라(Camera)</label>
+                    <select id="cameraFacing" class="text-input-modern">
+                        <option value="user">전면(Front)</option>
+                        <option value="environment">후면(Rear)</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+        <button class="start-btn-modern" onclick="startGame()">게임 시작(Start game)</button>
+    </div>
+</div>
+
+<!-- 점수판 화면 -->
+<div id="scoreboard" class="screen">
+    <div id="gameNotification" class="game-notification"></div>
+    <!-- 상단 바 (가로 모드용) -->
+    <div class="scoreboard-top-bar">
+        <div class="game-info">
+            <span id="gameNameDisplay">-</span>
+            <span id="currentTimeDisplay">00:00</span>
+            <span id="elapsedTimeDisplay">00:00:00</span>
+        </div>
+        <div class="scoreboard-main-controls">
+            <button id="voiceControlBtn" class="control-btn" style="display: none;">🎤</button>
+            <button id="recordStopButton" class="control-btn" title="녹화 일시정지">❚❚</button>
+            <div class="menu-container">
+                <button id="scoreboardMenuButton" class="control-btn" title="메뉴">☰</button>
+                <div id="scoreboardMenu" class="menu-dropdown">
+                    <button data-action="showGameSelection">🏠 홈(Home)</button>
+                    <button data-action="resetSet">🔄 세트 리셋(Set reset)</button>
+                    <button data-action="undoLastScore">↩️ 점수 수정(Score undo)</button>
+                    <button data-action="switchCourt">🔃 코트 교체(Change court)</button>
+                    <button data-action="showHistory">📜 경기 기록(History)</button>
+                    <button data-action="toggleCamera">📷 카메라</button>
+                    <button data-action="showAbout">ℹ️ About</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 메인 점수 영역 -->
+    <div class="scoreboard-main-area">
+        <div class="player-score" id="player1Score" role="button" tabindex="0">
+            <div class="player-info">
+                <span class="player-name">Player 1</span>
+                <span class="set-score">(Sets: <span id="player1SetsInline">0</span>)</span>
+            </div>
+            <div class="score-display" id="score1">0</div>
+        </div>
+        <div class="player-score" id="player2Score" role="button" tabindex="0">
+            <div class="player-info">
+                <span class="player-name">Player 2</span>
+                <span class="set-score">(Sets: <span id="player2SetsInline">0</span>)</span>
+            </div>
+            <div class="score-display" id="score2">0</div>
+        </div>
+    </div>
+
+    <!-- 하단 버튼들 (세로 모드용) -->
+    <div class="control-buttons">
+        <button class="control-btn" onclick="showGameSelection()" type="button"
+                title="🏠 홈(Home)"></button>
+        <button class="control-btn" onclick="resetSet()" type="button"
+                title="🔄 세트 리셋(Set reset)"></button>
+        <button class="control-btn" onclick="undoLastScore()" type="button"
+                title="↩️ 점수 수정(Score undo)"></button>
+        <button class="control-btn" onclick="switchCourt()" type="button"
+                title="🔃 코트 교체(Change court)"></button>
+        <button class="control-btn" onclick="showHistory()" type="button"
+                title="📜 경기 기록(match record)"></button>
+        <button class="control-btn" onclick="showAbout()"
+                type="button" title="About">ℹ️</button>
+    </div>
+</div>
+
+<!-- 음성 설정 모달 -->
+<div id="voiceLanguage" class="screen">
+    <header class="settings-header">
+        <button class="back-btn" onclick="showGameSelection()" title="이전(Back)">←</button>
+        <h1>음성 안내 설정(Voice guidance settings)</h1>
+    </header>
+    <div class="content-body">
+        <div class="settings-card">
+            <!--        <button class="modal-close" onclick="closevoiceLanguage()">&times;</button>-->
+            <h2>음성 설정(Voice setting)</h2>
+            <p class="description">
+                음성안내 언어(영어/한국어)를 선택하세요.<br>
+                Select the voice guidance language (English/Korean)<br>
+                목소리, 발음 속도, 음높이를 선택하여 확인할 수 있습니다.<br>
+                You can check by selecting voice, pronunciation speed, and pitch.
+            </p>
+
+            <div class="voice-settings-columns">
+                <section class="settings-card">
+                    <div class="setting-item">
+                        <label for="voiceLangSelect">언어(Voice language)</label>
+                        <select id="voiceLangSelect" class="text-input-modern">
+                            <option value="ko-KR">한국어(Korean)</option>
+                            <option value="en-US">English (US)</option>
+                        </select></div>
+                    <div class="setting-item"><label for="voiceSelect">목소리(Voice)</label>
+                        <select id="voiceSelect" class="text-input-modern">
+                            <option value="">기본(Basic)</option>
+                        </select></div>
+                </section>
+                <section class="settings-card">
+                    <div class="setting-item">
+                        <label for="rateRange">속도(Speed)</label>
+                        <div class="slider-wrapper">
+                            <span id="rateValue">1.0</span>
+                            <input type="range" id="rateRange" min="0.5" max="2" step="0.1"
+                                   value="1">
+                        </div>
+                    </div>
+                    <div class="setting-item"><label for="pitchRange">음높이(Pitch)</label>
+                        <div class="slider-wrapper"><span id="pitchValue">1.0</span><input
+                                type="range"
+                                id="pitchRange"
+                                min="0"
+                                max="2"
+                                step="0.1"
+                                value="1">
+                        </div>
+                    </div>
+                    <button class="modal-action" onclick="speakPreview()">소리 재생(Play sound)</button>
+                </section>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- 게임 종료 화면 -->
+<div id="gameEnd" class="screen">
+    <canvas id="confettiCanvas"></canvas>
+    <audio id="victorySound" src="sounds/victory.mp3"></audio>
+    <!-- Replace with actual sound file path -->
+    <div class="winner-card">
+        <h1>VICTORY</h1>
+        <div class="winner-name-large" id="winnerText"></div>
+        <p class="final-score-display">
+            <span id="player1DisplayName"></span> <strong id="finalScore"></strong> - <strong
+                id="finalScore2"></strong> <span id="player2DisplayName"></span>
+        </p>
+    </div>
+    <div class="end-buttons">
+        <button class="end-btn" onclick="showGameSelection()">홈으로(Home)</button>
+        <button class="end-btn" onclick="showGameSettings()">새 게임(New Game)</button>
+    </div>
+</div>
+
+<!-- About 모달 -->
+<div id="aboutModal" class="modal">
+    <div class="modal-content">
+        <!--        <button class="modal-close" onclick="closeAboutModal()" aria-label="닫기(Close)">&times;-->
+        <!--        </button>-->
+        <h2>SportScore</h2>
+        <p>버전(Version): <strong>v1.3</strong></p>
+        <p>제작(creation): <strong>song2ne</strong></p>
+        <p>문의(Inquiry): <a href="mailto:songgs33@gmail.com">songgs33@gmail.com</a></p>
+        <div class="modal-footer">
+            <button class="modal-action" onclick="closeAboutModal()">확인(OK)</button>
+        </div>
+    </div>
+</div>
+
+<!-- History 모달 -->
+<div id="historyModal" class="modal">
+    <div class="modal-content" style="width: 95vw; max-width: 600px;">
+        <!--        <button class="modal-close" onclick="closeHistoryModal()" aria-label="닫기(Close)">&times;-->
+        <!--        </button>-->
+        <h2>경기 기록</h2>
+        <div id="historyList" style="max-height: 70vh; overflow-y: auto; margin-top: 1rem;">
+            <!-- History items will be populated here -->
+        </div>
+        <div class="modal-footer">
+            <button class="modal-action" onclick="clearHistory()">전체 삭제(Delete all)</button>
+            <button class="modal-action" onclick="closeHistoryModal()">닫기(Close)</button>
+        </div>
+    </div>
+</div>
+
+<!-- Saved Names Manager 모달 -->
+<div id="savedNamesModal" class="modal">
+    <div class="modal-content" style="width: 95vw; max-width: 400px;">
+        <h2>선수 관리 <span class="eng-text">(Player Management)</span></h2>
+
+        <div class="player-input-group">
+            <input type="text" id="newSavedName" placeholder="이름 입력 (Enter name)">
+            <button class="apply-btn" onclick="savePlayer()">추가/저장</button>
+        </div>
+
+        <div id="totalStatsSummary" style="margin-top: 10px; font-size: 0.9rem; color: #555;">
+        </div>
+
+        <div id="savedNamesList" style="max-height: 50vh; overflow-y: auto; margin-top: 1rem; border-top: 1px solid #eee;">
+        </div>
+
+        <div class="modal-footer">
+            <button class="modal-action" onclick="closeSavedNamesManager()">닫기(Close)</button>
+        </div>
+    </div>
+</div>
+<!--<div id="savedNamesModal" class="modal">-->
+<!--    <div class="modal-content" style="width: 95vw; max-width: 400px;">-->
+<!--        &lt;!&ndash;        <button class="modal-close" onclick="closeSavedNamesManager()" aria-label="닫기(Close)">&ndash;&gt;-->
+<!--        &lt;!&ndash;            &times;&ndash;&gt;-->
+<!--        &lt;!&ndash;        </button>&ndash;&gt;-->
+<!--        <h2>선수 관리(player management)</h2>-->
+<!--        <div class="player-input-group">-->
+<!--            <label for="newSavedName"></label><input type="text" id="newSavedName"-->
+<!--                                                     placeholder="추가할 이름 입력(Enter a name to add)">-->
+<!--            <button class="apply-btn" onclick="addNewSavedName()">추가(Add)</button>-->
+<!--        </div>-->
+<!--        <div id="savedNamesList" style="max-height: 50vh; overflow-y: auto; margin-top: 1rem;">-->
+<!--            &lt;!&ndash; Saved name items will be populated here &ndash;&gt;-->
+<!--        </div>-->
+<!--        <div class="modal-footer">-->
+<!--            <button class="modal-action" onclick="closeSavedNamesManager()">닫기(Close)</button>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--</div>-->
+
+<!-- Player Names Picker 모달 -->
+<div id="playerNamesPickerModal" class="modal">
+    <div class="modal-content" style="width: 95vw; max-width: 400px;">
+        <!--        <button class="modal-close" onclick="closePlayerNamesPicker()" aria-label="닫기(Close)">-->
+        <!--            &times;-->
+        <!--        </button>-->
+        <h2>선수 선택(Player selection)</h2>
+        <div id="pickerNamesList"
+             style="max-height: 50vh; overflow-y: auto; margin-top: 1rem;"></div>
+        <div class="modal-footer">
+            <button class="modal-action" onclick="closePlayerNamesPicker()">닫기(Close)</button>
+        </div>
+    </div>
+</div>
+
+<div id="videoReviewModal" class="modal">
+    <div class="modal-content">
+        <h2 style="margin-top:0;">영상 확인(Check the video)</h2>
+        <video id="reviewVideo" controls autoplay loop style="width: 100%;"></video>
+        <div class="video-controls">
+            <button id="slowPlayBtn" class="modal-action">느리게 재생(Slow)</button>
+            <button id="normalPlayBtn" class="modal-action">보통 재생(Normal)</button>
+            <button class="modal-btn" onclick="saveReviewedVideo()">저장(Save)</button>
+            <button class="modal-btn" onclick="closeReviewBtn()">취소(Cancel)</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<script src="script.js"></script>
+</body>
+
+</html>
