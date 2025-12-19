@@ -469,3 +469,25 @@
 </body>
 
 </html>
+
+<!-- Recording test panel (iOS15+ friendly) -->
+<div id="recordTest" style="position:fixed;right:12px;bottom:12px;background:#fff;padding:12px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.12);width:320px;z-index:1300;font-family:sans-serif">
+    <h4 style="margin:0 0 8px 0;font-size:14px">녹화 테스트(iOS15+)</h4>
+    <video id="cameraView" autoplay playsinline muted style="width:100%;background:#000;border-radius:6px;display:none"></video>
+    <div id="cameraControls" style="display:none;margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;justify-content:space-between">
+        <button id="btnStartCamTest">카메라 시작</button>
+        <button id="btnStartRecTest" disabled>녹화 시작</button>
+        <button id="btnStopRecTest" disabled>중지</button>
+        <button id="btnSwitchCamTest">카메라 전환</button>
+        <button id="btnAutoRecord5s">자동 5초 녹화</button>
+    </div>
+    <a id="downloadLinkTest" style="display:none;margin-top:8px;word-break:break-all"></a>
+    <div style="margin-top:8px;font-size:12px;color:#444">
+        <strong>테스트 체크리스트</strong>
+        <div><label><input type="checkbox" id="chkPreview"> 미리보기 표시</label></div>
+        <div><label><input type="checkbox" id="chkRecording"> 녹화 시작/중지</label></div>
+        <div><label><input type="checkbox" id="chkPlayback"> 다운로드/재생</label></div>
+    </div>
+    <textarea id="recordTestLog" placeholder="로그" style="width:100%;height:70px;margin-top:8px;font-size:12px"></textarea>
+    <div style="text-align:right;margin-top:6px"><button id="btnClearTestLog">로그 지우기</button></div>
+</div>

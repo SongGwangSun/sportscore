@@ -681,16 +681,16 @@ async function startCamera(isForRecording = false) {
     }
 //        if (currentStream) stopCamera();
 
-try {
-        console.log("Requesting camera with facing mode:", facingMode);
-        // 오디오를 먼저 시도하고, 실패 시 비디오만 가져오도록 수정
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facingMode } }, audio: false });
+    try {
+        console.log("Requesting camera with facing mode:", facingMode, "isForRecording:", isForRecording);
+        // 녹화용이면 오디오도 요청
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facingMode } }, audio: Boolean(isForRecording) });
         currentStream = stream;
     } catch (err) {
         console.error("Could not get audio/video stream:", err);
         try {
             console.log("Falling back to video-only stream.");
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facingMode } } });
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facingMode } }, audio: false });
             currentStream = stream;
         } catch (videoErr) {
             console.error("Failed to get video stream as well:", videoErr);
@@ -732,8 +732,10 @@ function startRecording()
         high: 2500000   // 2.5 Mbps
     }[quality];
 
+    // 선택 가능한 mimeType을 우선 탐색
+    const supportedMime = getSupportedMimeType();
     const options = {
-        mimeType: 'video/webm; codecs=vp8', // 코덱을 명시해주는 것이 안정적입니다.
+        ...(supportedMime ? { mimeType: supportedMime } : {}),
         videoBitsPerSecond: bitsPerSecond
     };
     // --- 여기까지 ---
@@ -754,10 +756,25 @@ function startRecording()
                  console.warn("No data recorded.");
                  return; // 녹화된 데이터가 없으면 미리보기 모달을 띄우지 않음
              }
-             const blob = new Blob(recordedChunks, { type: 'video/webm' });
+             const blobType = recordedChunks[0]?.type || 'video/webm';
+             const blob = new Blob(recordedChunks, { type: blobType });
              const videoUrl = URL.createObjectURL(blob);
-             document.getElementById('reviewVideo').src = videoUrl;
-             document.getElementById('videoReviewModal').classList.add('active');
+             // review modal (existing UI)
+             const reviewEl = document.getElementById('reviewVideo');
+             if (reviewEl) reviewEl.src = videoUrl;
+             const reviewModal = document.getElementById('videoReviewModal');
+             if (reviewModal) reviewModal.classList.add('active');
+             // test panel download link
+             const dl = document.getElementById('downloadLinkTest');
+             if (dl) {
+                 dl.href = videoUrl;
+                 const ext = blobType.includes('mp4') ? 'mp4' : 'webm';
+                 dl.download = `test_record_${Date.now()}.${ext}`;
+                 dl.style.display = 'block';
+                 dl.textContent = `녹화 파일 다운로드 (${dl.download})`;
+             }
+             const chkPlayback = document.getElementById('chkPlayback');
+             if (chkPlayback) chkPlayback.checked = true;
         };
 
         mediaRecorder.start();
@@ -766,6 +783,57 @@ function startRecording()
     } catch (e) {
         console.error("Error creating MediaRecorder:", e);
         alert(`녹화를 시작할 수 없습니다: ${e.message}`);
+    }
+}
+
+// --- MediaRecorder / platform helpers ---
+function getSupportedMimeType() {
+    if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) return '';
+    const candidates = [
+        'video/mp4',
+        'video/webm;codecs=vp9',
+        'video/webm;codecs=vp8',
+        'video/webm'
+    ];
+    for (const m of candidates) {
+        try {
+            if (MediaRecorder.isTypeSupported(m)) return m;
+        } catch (e) {
+            // ignore
+        }
+    }
+    return '';
+}
+
+function detectIOSVersion() {
+    const ua = navigator.userAgent || navigator.vendor || window.opera;
+    const match = ua.match(/OS (\d+)_?(\d+)?/i);
+    if (!/iP(hone|od|ad)/.test(ua)) return null;
+    if (match && match.length > 1) return parseInt(match[1], 10);
+    return null;
+}
+
+function logTest(msg) {
+    const ta = document.getElementById('recordTestLog');
+    if (!ta) return;
+    ta.value += `[${new Date().toLocaleTimeString()}] ${msg}\n`;
+    ta.scrollTop = ta.scrollHeight;
+}
+
+async function runAuto5sRecord() {
+    try {
+        logTest('자동 5초 녹화 시작: 카메라 요청');
+        await startCamera(true);
+        document.getElementById('btnStartRecTest').disabled = true;
+        document.getElementById('btnStopRecTest').disabled = false;
+        logTest('녹화 시작');
+        startRecording();
+        await new Promise(res => setTimeout(res, 5000));
+        logTest('5초 경과, 녹화 중지');
+        if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
+    } catch (e) {
+        logTest('자동 녹화 실패: ' + e.message);
+        console.error(e);
     }
 }
 
@@ -813,10 +881,38 @@ function saveReviewedVideo()
         if (window.AndroidInterface?.saveVideo)
         {
             window.AndroidInterface.saveVideo(base64data, gameState.currentGameId.toString());
-        } else
-        {
-            console.error("Android interface not found for saving video.");
-            alert("안드로이드 환경에서만 동영상을 저장할 수 있습니다.");
+        } else {
+            console.error("Android interface not found for saving video. Falling back to browser download.");
+            // Blob URL 생성
+            const fileUrl = URL.createObjectURL(blob);
+
+            // 1) gameHistory에 URL 저장
+            try {
+                const idx = gameHistory.findIndex(r => r.id && r.id.toString() === (gameState.currentGameId || '').toString());
+                if (idx > -1) {
+                    gameHistory[idx].videoUrl = fileUrl;
+                    saveHistory();
+                    logTest && typeof logTest === 'function' && logTest('게임 기록에 비디오 URL 저장됨: ' + gameState.currentGameId);
+                }
+            } catch (e) {
+                console.error('gameHistory 저장 실패:', e);
+            }
+
+            // 2) 자동 다운로드 트리거 (브라우저에서 파일 받기)
+            try {
+                const ext = blob.type && blob.type.includes('mp4') ? 'mp4' : 'webm';
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = fileUrl;
+                a.download = `record_${gameState.currentGameId || Date.now()}.${ext}`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                logTest && typeof logTest === 'function' && logTest('브라우저 다운로드가 시작되었습니다.');
+            } catch (e) {
+                console.error('브라우저 다운로드 실패:', e);
+                logTest && typeof logTest === 'function' && logTest('브라우저 다운로드 실패: ' + e.message);
+            }
         }
 
         // 6. 저장 요청 후, 모달을 닫고 데이터를 초기화
@@ -1198,6 +1294,72 @@ document.addEventListener('DOMContentLoaded', function () {
     const menuButton = document.getElementById('scoreboardMenuButton');
     menuButton.addEventListener('click', (event) => { event.stopPropagation(); menu.style.display = menu.style.display === 'block' ? 'none' : 'block'; });
     window.addEventListener('click', (event) => { if (!menu.contains(event.target) && !menuButton.contains(event.target)) { menu.style.display = 'none'; } });
+
+    // --- Recording test panel handlers ---
+    const btnStartCamTest = document.getElementById('btnStartCamTest');
+    const btnStartRecTest = document.getElementById('btnStartRecTest');
+    const btnStopRecTest = document.getElementById('btnStopRecTest');
+    const btnSwitchCamTest = document.getElementById('btnSwitchCamTest');
+    const btnAutoRecord5s = document.getElementById('btnAutoRecord5s');
+    const downloadLinkTest = document.getElementById('downloadLinkTest');
+    const chkPreview = document.getElementById('chkPreview');
+    const chkRecording = document.getElementById('chkRecording');
+    const chkPlayback = document.getElementById('chkPlayback');
+
+    if (btnStartCamTest) btnStartCamTest.addEventListener('click', async () => {
+        try {
+            await startCamera(false);
+            const camView = document.getElementById('cameraView');
+            if (camView) { camView.style.display = 'block'; camView.srcObject = currentStream; }
+            document.getElementById('cameraControls').style.display = 'flex';
+            btnStartRecTest.disabled = false;
+            chkPreview.checked = true;
+            logTest('카메라 프리뷰 표시됨');
+        } catch (e) {
+            logTest('카메라 시작 실패: ' + e.message);
+        }
+    });
+
+    if (btnStartRecTest) btnStartRecTest.addEventListener('click', () => {
+        startRecording();
+        btnStartRecTest.disabled = true;
+        btnStopRecTest.disabled = false;
+        chkRecording.checked = true;
+        logTest('수동 녹화 시작');
+    });
+
+    if (btnStopRecTest) btnStopRecTest.addEventListener('click', () => {
+        if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
+        btnStartRecTest.disabled = false;
+        btnStopRecTest.disabled = true;
+        chkRecording.checked = true;
+        logTest('녹화 중지 요청');
+    });
+
+    if (btnSwitchCamTest) btnSwitchCamTest.addEventListener('click', () => {
+        switchCamera();
+        const camView = document.getElementById('cameraView');
+        if (camView) camView.srcObject = currentStream;
+        logTest('카메라 전환 요청');
+    });
+
+    if (btnAutoRecord5s) btnAutoRecord5s.addEventListener('click', () => runAuto5sRecord());
+
+    if (downloadLinkTest) {
+        // When recording stops, create download link
+        const originalOnStop = mediaRecorder?.onstop;
+        // Safe handler: attach global onstop behavior in existing mediaRecorder.onstop places
+    }
+
+    const btnClearTestLog = document.getElementById('btnClearTestLog');
+    if (btnClearTestLog) btnClearTestLog.addEventListener('click', () => { document.getElementById('recordTestLog').value = ''; });
+
+    // iOS version hint
+    const iosVer = detectIOSVersion();
+    if (iosVer !== null) {
+        if (iosVer < 15) logTest(`iOS ${iosVer} detected — MediaRecorder 미지원 가능 (iOS15+ 권장)`);
+        else logTest(`iOS ${iosVer} detected — MediaRecorder 사용 가능 (iOS15+)`);
+    }
     const winScoreRange = document.getElementById('winScoreRange');
     winScoreRange.addEventListener('input', () => { document.getElementById('winScoreValue').textContent = winScoreRange.value; });
     const totalSetsRange = document.getElementById('totalSetsRange');
