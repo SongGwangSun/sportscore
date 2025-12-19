@@ -933,7 +933,20 @@ function saveReviewedVideo()
                     dl.download = `record_${gameState.currentGameId || Date.now()}.${ext}`;
                     dl.textContent = '다운로드(Download)';
                     dl.target = '_blank';
-                    logTest && typeof logTest === 'function' && logTest('다운로드 버튼이 준비되었습니다. 클릭하여 파일을 저장하세요.');
+                    logTest && typeof logTest === 'function' && logTest('다운로드 버튼이 준비되었습니다. 곧 자동으로 다운로드가 시작됩니다.');
+                    // 자동으로 다운로드 트리거하고 모달 닫기 (사용자 클릭 흐름 내에서 안전)
+                    try {
+                        dl.click();
+                        // cleanup link after use
+                        setTimeout(() => {
+                            if (dl && dl.parentNode) dl.parentNode.removeChild(dl);
+                            try { URL.revokeObjectURL(fileUrl); } catch (e) {}
+                        }, 1000);
+                        // close modal and reset data
+                        closeReviewModal();
+                    } catch (e) {
+                        console.error('자동 다운로드 실패:', e);
+                    }
                 } else {
                     // fallback: expose link in test panel if modal controls missing
                     const dlTest = document.getElementById('downloadLinkTest');
@@ -943,7 +956,14 @@ function saveReviewedVideo()
                         dlTest.download = `record_${gameState.currentGameId || Date.now()}.${ext}`;
                         dlTest.style.display = 'block';
                         dlTest.textContent = `다운로드 파일: ${dlTest.download}`;
-                        logTest && typeof logTest === 'function' && logTest('테스트 패널에 다운로드 링크가 생성되었습니다.');
+                        logTest && typeof logTest === 'function' && logTest('테스트 패널에 다운로드 링크가 생성되었습니다. 곧 자동 다운로드가 시도됩니다.');
+                        try {
+                            dlTest.click();
+                            setTimeout(() => { try { URL.revokeObjectURL(fileUrl); } catch (e) {} }, 1000);
+                            closeReviewModal();
+                        } catch (e) {
+                            console.error('테스트 패널 자동 다운로드 실패:', e);
+                        }
                     }
                 }
             } catch (e) {
