@@ -480,6 +480,22 @@ function showEndScreen(winner) {
     const victoryImageUrl = `images/win_${gameState.selectedGame}.jpg`; 
     gameEndScreen.style.backgroundImage = `url('${victoryImageUrl}')`;
 
+    // If there is recorded video data, show review/save modal to ask user to save
+    try {
+        if (recordedChunks && recordedChunks.length > 0) {
+            const blobType = recordedChunks[0]?.type || 'video/webm';
+            const blob = new Blob(recordedChunks, { type: blobType });
+            const videoUrl = URL.createObjectURL(blob);
+            const reviewEl = document.getElementById('reviewVideo');
+            if (reviewEl) reviewEl.src = videoUrl;
+            const reviewModal = document.getElementById('videoReviewModal');
+            if (reviewModal) reviewModal.classList.add('active');
+            logTest && typeof logTest === 'function' && logTest('게임 종료: 녹화된 영상이 있으므로 저장/미리보기를 표시합니다.');
+        }
+    } catch (e) {
+        console.error('showEndScreen: preview modal failed', e);
+    }
+
     showScreen('gameEnd');
     triggerConfetti();
 //    const victorySound = document.getElementById('victorySound');
@@ -1378,17 +1394,83 @@ document.addEventListener('DOMContentLoaded', function () {
     enableRecordingSwitch.addEventListener('change', function() {
         recordingOptionsDiv.style.display = this.checked ? 'block' : 'none';
     });
+    // --- Web Speech fallback for iOS / desktop when Android native is not available ---
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+    let webRec = null;
+    let webRecActive = false;
+
+    function createWebRecognition() {
+        if (!SpeechRecognition) return null;
+        try {
+            const r = new SpeechRecognition();
+            r.continuous = true;
+            r.interimResults = true;
+            r.lang = gameState.selectedLang || 'ko-KR';
+            r.onresult = (evt) => {
+                let interim = '';
+                let final = '';
+                for (let i = evt.resultIndex; i < evt.results.length; ++i) {
+                    const res = evt.results[i];
+                    if (res.isFinal) final += res[0].transcript;
+                    else interim += res[0].transcript;
+                }
+                if (interim) window.onPartialVoiceResult && window.onPartialVoiceResult(interim);
+                if (final) window.onVoiceResult && window.onVoiceResult(final);
+            };
+            r.onerror = (e) => { window.onVoiceError && window.onVoiceError(e); };
+            r.onend = () => {
+                webRecActive = false;
+                // auto-restart for continuous mode when user didn't explicitly stop
+                if (webRec && webRec.continuous && isVoiceListening) {
+                    try { webRec.start(); webRecActive = true; } catch (e) {}
+                }
+            };
+            return r;
+        } catch (e) {
+            console.error('createWebRecognition failed', e);
+            return null;
+        }
+    }
+
+    function startWebRecognition() {
+        if (!SpeechRecognition) return false;
+        if (!webRec) webRec = createWebRecognition();
+        if (!webRec) return false;
+        try { webRec.start(); webRecActive = true; return true; } catch (e) { console.error(e); return false; }
+    }
+
+    function stopWebRecognition() { if (webRec) { try { webRec.stop(); webRecActive = false; } catch (e) {} } }
+
     // 음성인식 테스트 버튼 이벤트
     const voiceTestBtn = document.getElementById('voiceTestBtn');
-    voiceTestBtn.addEventListener('click', () => {
+    voiceTestBtn.addEventListener('click', async () => {
+        // Prefer Android native when available
         if (window.AndroidInterface?.startVoiceRecognition) {
             window.AndroidInterface.startVoiceRecognition();
             voiceTestBtn.classList.add('listening');
             voiceTestBtn.disabled = true; // 중복 클릭 방지
             document.getElementById('recognizedWord').textContent = "듣는 중(listening)...";
-        } else {
-            alert("음성인식은 안드로이드 앱에서만 지원됩니다.\nVoice recognition is only supported on Android apps.");
+            return;
         }
+
+        // Web Speech fallback
+        if (SpeechRecognition) {
+            document.getElementById('recognizedWord').textContent = "듣는 중(listening)...";
+            voiceTestBtn.classList.add('listening');
+            voiceTestBtn.disabled = true;
+            const started = startWebRecognition();
+            if (!started) {
+                alert('브라우저 음성인식을 시작할 수 없습니다.');
+                voiceTestBtn.classList.remove('listening');
+                voiceTestBtn.disabled = false;
+            } else {
+                // stop after a short test (10s)
+                setTimeout(() => { stopWebRecognition(); voiceTestBtn.classList.remove('listening'); voiceTestBtn.disabled = false; }, 10000);
+            }
+            return;
+        }
+
+        alert("음성인식은 해당 브라우저에서 지원되지 않습니다. (Android native 또는 Web Speech API 필요)");
     });
 
     // 스코어보드의 음성인식 제어 버튼 이벤트
@@ -1396,17 +1478,41 @@ document.addEventListener('DOMContentLoaded', function () {
     voiceControlBtn.addEventListener('click', () => {
         isVoiceListening = !isVoiceListening;
         if (isVoiceListening) {
+            // Try Android native first
             if (window.AndroidInterface?.startVoiceRecognition) {
                 window.AndroidInterface.startVoiceRecognition();
                 voiceControlBtn.classList.add('active');
                 voiceControlBtn.title = "음성인식 중지(Stop voice recognition)";
+                return;
             }
-        } else if (window.AndroidInterface?.stopVoiceRecognition) {
+
+            // Web Speech fallback
+            if (SpeechRecognition) {
+                const ok = startWebRecognition();
+                if (ok) {
+                    voiceControlBtn.classList.add('active');
+                    voiceControlBtn.title = "음성인식 중지(Stop voice recognition)";
+                    return;
+                }
+            }
+
+            alert('음성인식을 시작할 수 없습니다. (Android native 또는 Web Speech API 필요)');
+            isVoiceListening = false;
+        } else {
+            // Stop native or web
+            if (window.AndroidInterface?.stopVoiceRecognition) {
                 window.AndroidInterface.stopVoiceRecognition();
                 voiceControlBtn.classList.remove('active');
                 voiceControlBtn.title = "음성인식 시작(Start voice recognition)";
+                return;
             }
-        });
+            if (SpeechRecognition) {
+                stopWebRecognition();
+                voiceControlBtn.classList.remove('active');
+                voiceControlBtn.title = "음성인식 시작(Start voice recognition)";
+                return;
+            }
+        }
     });
 
 
