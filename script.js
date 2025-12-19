@@ -937,10 +937,9 @@ function saveReviewedVideo()
                     // 자동으로 다운로드 트리거하고 모달 닫기 (사용자 클릭 흐름 내에서 안전)
                     try {
                         dl.click();
-                        // cleanup link after use
+                        // cleanup link after use (do NOT revoke fileUrl; keep it for history playback)
                         setTimeout(() => {
                             if (dl && dl.parentNode) dl.parentNode.removeChild(dl);
-                            try { URL.revokeObjectURL(fileUrl); } catch (e) {}
                         }, 1000);
                         // close modal and reset data
                         closeReviewModal();
@@ -959,7 +958,7 @@ function saveReviewedVideo()
                         logTest && typeof logTest === 'function' && logTest('테스트 패널에 다운로드 링크가 생성되었습니다. 곧 자동 다운로드가 시도됩니다.');
                         try {
                             dlTest.click();
-                            setTimeout(() => { try { URL.revokeObjectURL(fileUrl); } catch (e) {} }, 1000);
+                            // keep fileUrl for history playback; do not revoke
                             closeReviewModal();
                         } catch (e) {
                             console.error('테스트 패널 자동 다운로드 실패:', e);
@@ -1021,18 +1020,37 @@ function closeReviewModal()
 //}
 
 function playHistoryVideo(videoUrl) {
-// 안드로이드 인터페이스가 있을 때만 재생을 시도합니다.
+    // If Android app provides a playback hook, use it
     if (window.AndroidInterface?.playVideo) {
         window.AndroidInterface.playVideo(videoUrl);
-    } else {
-//        console.log('Playing video from:', videoUrl);
-        // 안드로이드 환경이 아닐 경우, 사용자에게 알림
-        console.log('Video playback is only supported on the Android app.');
- //               alert('영상 재생은 안드로이드 앱에서만 지원됩니다.');
-        const video = document.createElement('video');
-        video.src = videoUrl;
-        video.controls = true;
-        video.play();
+        return;
+    }
+
+    // Otherwise use in-page review modal to play the video
+    try {
+        const reviewModal = document.getElementById('videoReviewModal');
+        const reviewVideo = document.getElementById('reviewVideo');
+        if (!reviewModal || !reviewVideo) {
+            // fallback: open new window/tab
+            window.open(videoUrl, '_blank');
+            return;
+        }
+
+        // If the videoUrl is a base64 data URI, assign directly; otherwise set as source
+        reviewVideo.src = videoUrl;
+        reviewVideo.controls = true;
+        reviewVideo.autoplay = true;
+        reviewVideo.loop = false;
+        reviewModal.classList.add('active');
+        // attempt to play (may be blocked without user gesture on some browsers)
+        const playPromise = reviewVideo.play();
+        if (playPromise && typeof playPromise.then === 'function') {
+            playPromise.catch(err => console.warn('Auto-play prevented:', err));
+        }
+    } catch (e) {
+        console.error('playHistoryVideo failed:', e);
+        // last resort: open in new tab
+        window.open(videoUrl, '_blank');
     }
 }
 
