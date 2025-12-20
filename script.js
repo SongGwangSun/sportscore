@@ -536,18 +536,29 @@ function showEndScreen(winner) {
         victorySound.src = "sounds/victory.mp3";
     }
     victorySound?.play().catch(e => console.error("Audio play failed:", e));
-    // If there is recorded video data, show review/save modal to ask user to save
+    // If there is recorded video data (either in recordedChunks or persisted lastRecordedBlob), show review/save modal
     try {
-        if (recordedChunks && recordedChunks.length > 0) {
-            const blobType = recordedChunks[0]?.type || 'video/webm';
-            const blob = new Blob(recordedChunks, { type: blobType });
-            const videoUrl = URL.createObjectURL(blob);
-            const reviewEl = document.getElementById('reviewVideo');
-            if (reviewEl) reviewEl.src = videoUrl;
-            const reviewModal = document.getElementById('videoReviewModal');
-            if (reviewModal) reviewModal.classList.add('active');
-            logTest && typeof logTest === 'function' && logTest('게임 종료: 녹화된 영상이 있으므로 저장/미리보기를 표시합니다.');
-            console.log('showEndScreen: preview modal len.', recordedChunks.length);
+        let hasBlob = (recordedChunks && recordedChunks.length > 0) || gameState.hasRecordedBlob;
+        if (hasBlob) {
+            let videoUrl = null;
+            if (gameState.hasRecordedBlob && gameState.lastRecordedUrl) {
+                videoUrl = gameState.lastRecordedUrl;
+            } else if (recordedChunks && recordedChunks.length > 0) {
+                const blobType = recordedChunks[0]?.type || 'video/webm';
+                const blob = new Blob(recordedChunks, { type: blobType });
+                videoUrl = URL.createObjectURL(blob);
+                gameState.lastRecordedBlob = blob;
+                gameState.lastRecordedUrl = videoUrl;
+                gameState.hasRecordedBlob = true;
+            }
+            if (videoUrl) {
+                const reviewEl = document.getElementById('reviewVideo');
+                if (reviewEl) reviewEl.src = videoUrl;
+                const reviewModal = document.getElementById('videoReviewModal');
+                if (reviewModal) reviewModal.classList.add('active');
+                logTest && typeof logTest === 'function' && logTest('게임 종료: 녹화된 영상이 있으므로 저장/미리보기를 표시합니다.');
+                console.log('showEndScreen: preview modal available.');
+            }
         }
     } catch (e) {
         console.error('showEndScreen: preview modal failed', e);
@@ -913,8 +924,12 @@ function startRecording()
                  return; // 녹화된 데이터가 없으면 미리보기 모달을 띄우지 않음
              }
              const blobType = recordedChunks[0]?.type || 'video/webm';
-             const blob = new Blob(recordedChunks, { type: blobType });
-             const videoUrl = URL.createObjectURL(blob);
+                         const blob = new Blob(recordedChunks, { type: blobType });
+                         const videoUrl = URL.createObjectURL(blob);
+                         // persist the last recorded blob/url so it survives modal close
+                         gameState.lastRecordedBlob = blob;
+                         gameState.lastRecordedUrl = videoUrl;
+                         gameState.hasRecordedBlob = true;
              // review modal (existing UI)
              const reviewEl = document.getElementById('reviewVideo');
              if (reviewEl) reviewEl.src = videoUrl;
@@ -1017,15 +1032,16 @@ window.onVideoSaved = (gameId, videoUri) => {
 function saveReviewedVideo()
 {
     // 1. 녹화된 데이터가 있는지 확인
-    if (recordedChunks.length === 0)
-    {
+    let blob = null;
+    if (recordedChunks && recordedChunks.length > 0) {
+        blob = new Blob(recordedChunks, { type: recordedChunks[0]?.type || 'video/webm' });
+    } else if (gameState.lastRecordedBlob) {
+        blob = gameState.lastRecordedBlob;
+    } else {
         alert("저장할 녹화 데이터가 없습니다.");
         closeReviewModal(); // 데이터가 없으면 그냥 모달만 닫음
         return;
     }
-
-    // 2. Blob 데이터 생성
-    const blob = new Blob(recordedChunks, { type: 'video/webm' });
 
     // 3. Blob을 Base64로 변환
     const reader = new FileReader();
@@ -1139,8 +1155,16 @@ function closeReviewModal()
     const reviewVideo = document.getElementById('reviewVideo');
     if (reviewVideo && reviewVideo.src)
     {
-        URL.revokeObjectURL(reviewVideo.src); // 메모리 해제
-        reviewVideo.src = ''; // 소스 초기화
+        // Do not revoke the object URL if it's persisted in gameState (keep it available for history playback).
+        try {
+            if (gameState.lastRecordedUrl && reviewVideo.src === gameState.lastRecordedUrl) {
+                // keep the URL for history playback
+                reviewVideo.src = '';
+            } else {
+                try { URL.revokeObjectURL(reviewVideo.src); } catch(e){}
+                reviewVideo.src = '';
+            }
+        } catch(e) { reviewVideo.src = ''; }
     }
 
     // 전역 변수 초기화
