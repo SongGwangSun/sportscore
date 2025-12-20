@@ -498,11 +498,11 @@ function showEndScreen(winner) {
 
     showScreen('gameEnd');
     triggerConfetti();
-//    const victorySound = document.getElementById('victorySound');
-//    if (victorySound && !victorySound.src) {
-//        victorySound.src = "sounds/victory.mp3";
-//    }
-//    victorySound?.play().catch(e => console.error("Audio play failed:", e));
+   const victorySound = document.getElementById('victorySound');
+   if (victorySound && !victorySound.src) {
+       victorySound.src = "sounds/victory.mp3";
+   }
+   victorySound?.play().catch(e => console.error("Audio play failed:", e));
 }
 
 function triggerConfetti() { const canvas = document.getElementById('confettiCanvas'); const myConfetti = confetti.create(canvas, { resize: true }); myConfetti({ particleCount: 150, spread: 180, origin: { y: 0.6 } }); }
@@ -679,10 +679,72 @@ function showGameSelection()
 const narrations = { 'ko-KR': { gameStart: "게임 시작", setReset: "세트 리셋", courtSwap: "코트 교체", player1SetWin: "1번 선수 세트", player2SetWin: "2번 선수 세트", undo: "실수 수정", serveChange: "서브 교체", courtChange: "코트 체인지" }, 'en-US': { gameStart: "Game start", setReset: "Set reset", courtSwap: "Switching sides", player1SetWin: "Player 1 wins the set", player2SetWin: "Player 2 wins the set", undo: "Undo", serveChange: "Serve change", courtChange: "Court change" } };
 function populateVoiceList() { const vSelect = document.getElementById('voiceSelect'); if (!vSelect || !window.speechSynthesis) return; voicesList = speechSynthesis.getVoices(); vSelect.innerHTML = ''; const langFilter = document.getElementById('voiceLangSelect').value; voicesList.filter(v => v.lang === langFilter).forEach(v => { const opt = document.createElement('option'); opt.textContent = v.name; opt.value = v.name; vSelect.appendChild(opt); }); vSelect.value = gameState.voiceName; }
 function speakPreview() { speakScore(gameState.selectedLang === 'ko-KR' ? "안녕 스포츠 점수판" : "Hello Sport score", true); }
-function speakScore(text, isPreview = false) { if (window.AndroidInterface?.speak && !isPreview) { window.AndroidInterface.speak(text); return; } if ('speechSynthesis' in window) { speechSynthesis.cancel(); const utt = new SpeechSynthesisUtterance(text); utt.lang = gameState.selectedLang; utt.rate = gameState.rate; utt.pitch = gameState.pitch; if (gameState.voiceName) { const voice = voicesList.find(v => v.name === gameState.voiceName); if (voice) utt.voice = voice; } speechSynthesis.speak(utt); } }
+function speakScore(text, isPreview = false) 
+{ 
+    if (window.AndroidInterface?.speak && !isPreview) 
+    { 
+        window.AndroidInterface.speak(text); 
+        return; 
+    } 
+    if ('speechSynthesis' in window) 
+    { 
+        speechSynthesis.cancel(); 
+        const utt = new SpeechSynthesisUtterance(text); 
+        utt.lang = gameState.selectedLang; 
+        utt.rate = gameState.rate; 
+        utt.pitch = gameState.pitch; 
+        if (gameState.voiceName) 
+        { 
+            const voice = voicesList.find(v => v.name === gameState.voiceName); 
+            if (voice) utt.voice = voice; 
+        } 
+        speechSynthesis.speak(utt); 
+    } 
+}
 function loadVoices() { if ('speechSynthesis' in window) { speechSynthesis.onvoiceschanged = populateVoiceList; populateVoiceList(); } }
-function speakNarration(key) { const text = narrations[gameState.selectedLang]?.[key]; if (text) speakScore(text); }
-function speakCurrentScore() { speakScore(`${gameState.player1Score} 대 ${gameState.player2Score}`); }
+function speakNarration(key) { 
+    const text = narrations[gameState.selectedLang]?.[key]; 
+    if (text) speakScore(text); 
+}
+function speakCurrentScore() 
+{ 
+    let p1 = gameState.player1Score, p2 = gameState.player2Score;
+    if(gameState.selectedLang === 'ko-KR')
+    {
+        let voiceval = '';
+        if (p1 === 10 || p2 === 10) {
+            if (p1 === 10 && p2 !== 10) voiceval = `십 대 ${p2}`;
+            if (p2 === 10 && p1 !== 10) voiceval = `${p1} 대 십`;
+            voiceval = `십 대 십 동점`;
+        }
+        if (p1 === p2) {
+            voiceval = `${p1} 대 ${p2} 동점`;
+        } else
+            voiceval = `${p1} 대 ${p2}`;
+        if(gameState.selectedGame == 'pickleball') {
+            voiceval = voiceval + ServerCount + '번 서브';
+        }
+        speakScore(voiceval);
+    }
+    else
+    {
+        if (gameState.selectedGame == 'pingpong' || gameState.selectedGame == 'badminton') 
+        {
+            if (p1 == p2) {
+                if(p1 == 0) speakScore('love all');
+                speakScore(`${p1} all`);
+            }
+            else if (p1 == 0) {
+                speakScore(`love ${p2}`);
+            }
+            else if (p2 == 0) {
+                speakScore(`${p2} love`);
+            }
+        }
+        else
+            speakScore(`${gameState.player1Score} , ${gameState.player2Score}`); 
+    }
+}
 function toggleCamera() { const camView = document.getElementById('cameraView'); if (camView.style.display === 'block') stopCamera(); else startCamera(); }
 
 async function startCamera(isForRecording = false) {
