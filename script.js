@@ -7,6 +7,7 @@ let gameState = {
     selectedGame: 'badminton',
     winScore: 11,
     totalSets: 3,
+    matchType: 'singles',
     currentSet: 1,
     player1Score: 0,
     player2Score: 0,
@@ -529,15 +530,41 @@ function handleRallyWonBy(player)
     if (player === 1) gameState.player1Score++; else gameState.player2Score++;
     gameState.scoreHistory.push({ p1: gameState.player1Score, p2: gameState.player2Score, server: gameState.currentServer });
     const oldServer = gameState.currentServer;
+    const totalScore = gameState.player1Score + gameState.player2Score;
+    const deucePoint = gameState.winScore - 1;
     switch (gameState.selectedGame) {
     case 'pingpong':
-        const totalScore = gameState.player1Score + gameState.player2Score;
-        const deucePoint = gameState.winScore - 1;
+        if(gameState.matchType === 'doubles')
+        {
+            if (totalScore % 5 === 0 && totalScore > 0) {
+                gameState.currentServer = oldServer === 1 ? 2 : 1; }
+        }
+        else
+        {
+            if (totalScore % 2 === 0 && totalScore > 0) {
+                gameState.currentServer = oldServer === 1 ? 2 : 1; }
+        }
         if (gameState.player1Score >= deucePoint && gameState.player2Score >= deucePoint) {
-            gameState.currentServer = oldServer === 1 ? 2 : 1;
-        } else if (totalScore % 2 === 0 && totalScore > 0) {
-            gameState.currentServer = oldServer === 1 ? 2 : 1; }
-            break;
+                gameState.currentServer = oldServer === 1 ? 2 : 1;
+        }
+        break;
+    case 'pickleball':
+        if(gameState.matchType !== 'single')
+        {
+            if(player !== gameState.currentServer)
+            {
+                if (ServerCount == 1) ServerCount = 2;
+                else if (ServerCount == 2) {
+                    ServerCount = 1;
+                    gameState.currentServer = oldServer === 1 ? 2 : 1; }
+            }
+        }
+        else
+            gameState.currentServer = player;
+        if (gameState.player1Score >= deucePoint && gameState.player2Score >= deucePoint) {
+                gameState.currentServer = oldServer === 1 ? 2 : 1;
+        } 
+        break;
     default:
         gameState.currentServer = player;
         break;
@@ -638,7 +665,11 @@ async function startGame() {
     } else {
         voiceControlBtn.style.display = 'none';
     }
-
+    const matchTypeInput = document.querySelector('input[name="matchType"]:checked');
+    gameState.matchType = matchTypeInput ? matchTypeInput.value : 'single';
+    if (gameState.selectedGame === 'pickleball' && gameState.matchType !== 'single') {
+        ServerCount = 1;
+    }
     gameState.currentSet = 1;
     gameState.player1Sets = 0;
     gameState.player2Sets = 0;
@@ -723,17 +754,12 @@ function speakCurrentScore()
     if(gameState.selectedLang === 'ko-KR')
     {
         let voiceval = koreascoreVoice[p1] + ' 대 ' + koreascoreVoice[p2];
-        // if (p1 === 10 || p2 === 10) {
-        //     if (p1 === 10 && p2 !== 10) voiceval = `십 대 ${p2}`;
-        //     if (p2 === 10 && p1 !== 10) voiceval = `${p1} 대 십`;
-        //     voiceval = `십 대 십 동점`;
-        // }
         if (p1 === p2) {
             voiceval = voiceval + ' 동점 ';
         } 
-        if(gameState.selectedGame == 'pickleball' && (p1 + p2) % 2 == 1){
-            const ServerCount = gameState.currentServer == 1 ? '일' : '이';
-            voiceval = voiceval + ServerCount + '번 서브';
+        if(gameState.selectedGame == 'pickleball' && gameState.matchType != 'single'){
+            const Serverspeak = ServerCount == 1 ? ' 일' : ' 이';
+            voiceval = voiceval + Serverspeak + '번 서브';
         }
         speakScore(voiceval);
     }
