@@ -9,6 +9,7 @@
     const origError = console.error.bind(console);
     const buf = [];
 
+    
     function formatArgs(args){
         return args.map(a => {
             try { return (typeof a === 'object') ? JSON.stringify(a) : String(a); } catch(e){ return String(a); }
@@ -21,16 +22,33 @@
 
     function createConsoleUI(){
         if (document.getElementById('inpageConsole')) return;
+        const wrapper = document.createElement('div');
+        wrapper.id = 'inpageConsoleWrapper';
+        wrapper.style.cssText = 'position:fixed;right:8px;bottom:8px;z-index:99999;display:flex;flex-direction:column;align-items:flex-end;gap:6px;';
+
+        const btn = document.createElement('button');
+        btn.id = 'inpageConsoleToggle';
+        btn.textContent = 'Log';
+        btn.title = 'Toggle logs';
+        btn.style.cssText = 'background:#222;color:#0f0;border:1px solid #444;padding:6px 8px;border-radius:6px;font-size:12px;cursor:pointer;opacity:0.95;';
+
         const ta = document.createElement('textarea');
         ta.id = 'inpageConsole';
         ta.readOnly = true;
-        // 하단
-        // ta.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;height:140px;z-index:99999;resize:vertical;background:#111;color:#0f0;padding:8px;font-size:12px;border-radius:6px;opacity:0.95;';
-        // 상단 우측
-        ta.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;height:140px;z-index:99999;resize:vertical;background:#111;color:#0f0;padding:8px;font-size:12px;border-radius:6px;opacity:0.95;';
-        // 중앙
-        // ta.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;height:140px;z-index:99999;resize:vertical;background:#111;color:#0f0;padding:8px;font-size:12px;border-radius:6px;opacity:0.95;';
-        document.body.appendChild(ta);
+        ta.style.cssText = 'width:320px;height:140px;resize:vertical;background:#111;color:#0f0;padding:8px;font-size:12px;border-radius:6px;opacity:0.95;border:1px solid #333;';
+
+        btn.addEventListener('click', () => {
+            if (ta.style.display === 'none') {
+                ta.style.display = 'block';
+            } else {
+                ta.style.display = 'none';
+            }
+        });
+
+        wrapper.appendChild(btn);
+        wrapper.appendChild(ta);
+        document.body.appendChild(wrapper);
+
         for (const item of buf) {
             ta.value += `[${new Date().toLocaleTimeString()}] ${item.type.toUpperCase()}: ${item.text}\n`;
         }
@@ -1809,23 +1827,3 @@ document.addEventListener('DOMContentLoaded', function () {
   };
 })();
 
-(function makeDraggable(el){
-  el.style.cursor = 'move';
-  let isDown=false, startX, startY, origLeft, origTop;
-  el.addEventListener('mousedown', e => {
-    isDown = true;
-    startX = e.clientX; startY = e.clientY;
-    const rect = el.getBoundingClientRect();
-    origLeft = rect.left; origTop = rect.top;
-    e.preventDefault();
-  });
-  window.addEventListener('mousemove', e => {
-    if (!isDown) return;
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-    el.style.left = (origLeft + dx) + 'px';
-    el.style.top = (origTop + dy) + 'px';
-    el.style.right = 'auto'; el.style.bottom = 'auto';
-  });
-  window.addEventListener('mouseup', () => isDown = false);
-})(document.getElementById('inpageConsole'));
