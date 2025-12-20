@@ -451,7 +451,41 @@ function recordMatchResult(playerName, isWin) {
 }
 //function savePlayerNames() { localStorage.setItem('savedNames', JSON.stringify(savedNames)); }
 //function loadPlayerNames() { const data = localStorage.getItem('savedNames'); if (data) savedNames = JSON.parse(data); }
-function saveHistory() { localStorage.setItem('gameHistory', JSON.stringify(gameHistory)); }
+function saveHistory() {
+    try {
+        localStorage.setItem('gameHistory', JSON.stringify(gameHistory));
+        return true;
+    } catch (e) {
+        console.error('saveHistory failed:', e);
+        // Handle quota exceeded: try stripping large video data and retry
+        try {
+            if (e && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || e.code === 22)) {
+                logTest && typeof logTest === 'function' && logTest('저장 공간 부족: 비디오 데이터 제거 후 재시도합니다.');
+                // remove video data from entries
+                for (let i = 0; i < gameHistory.length; i++) {
+                    if (gameHistory[i] && gameHistory[i].videoUrl) gameHistory[i].videoUrl = null;
+                }
+                localStorage.setItem('gameHistory', JSON.stringify(gameHistory));
+                alert('저장 공간이 부족하여 비디오 데이터는 로컬에 저장되지 않았습니다. 다운로드 파일을 확인하세요.');
+                return true;
+            }
+        } catch (e2) {
+            console.error('saveHistory retry after stripping videoUrl failed:', e2);
+        }
+        // As a last resort, try to save minimal metadata only
+        try {
+            const minimal = gameHistory.map(r => ({ id: r.id, date: r.date, game: r.game, player1Name: r.player1Name, player2Name: r.player2Name, winner: r.winner }));
+            localStorage.setItem('gameHistory', JSON.stringify(minimal));
+            gameHistory = minimal;
+            alert('저장 공간 부족으로 일부 기록만 저장되었습니다. 비디오 파일은 저장되지 않았습니다.');
+            return true;
+        } catch (e3) {
+            console.error('saveHistory final fallback failed:', e3);
+            alert('기록 저장에 실패했습니다. 브라우저 저장 공간을 확인해주세요.');
+            return false;
+        }
+    }
+}
 function loadHistory() { const data = localStorage.getItem('gameHistory'); if (data) gameHistory = JSON.parse(data); }
 
 // --- 3. UI & SCREEN MANAGEMENT ---
@@ -588,23 +622,49 @@ function showEndScreen(winner) {
         let hasBlob = (recordedChunks && recordedChunks.length > 0) || gameState.hasRecordedBlob;
         if (hasBlob) {
             let videoUrl = null;
-            if (gameState.hasRecordedBlob && gameState.lastRecordedUrl) {
-                videoUrl = gameState.lastRecordedUrl;
-            } else if (recordedChunks && recordedChunks.length > 0) {
+            // Prefer freshly-created blob URLs from current recordedChunks
+            if (recordedChunks && recordedChunks.length > 0) {
                 const blobType = recordedChunks[0]?.type || 'video/webm';
                 const blob = new Blob(recordedChunks, { type: blobType });
-                videoUrl = URL.createObjectURL(blob);
-                gameState.lastRecordedBlob = blob;
-                gameState.lastRecordedUrl = videoUrl;
-                gameState.hasRecordedBlob = true;
+                try {
+                    videoUrl = URL.createObjectURL(blob);
+                    gameState.lastRecordedBlob = blob;
+                    gameState.lastRecordedUrl = videoUrl;
+                    gameState.hasRecordedBlob = true;
+                } catch (e) {
+                    console.error('Failed to create object URL from recordedChunks:', e);
+                    videoUrl = null;
+                }
+            } else if (gameState.lastRecordedBlob) {
+                // Recreate a fresh object URL from the stored blob (avoids stale/revoked blob:null URLs)
+                try {
+                    videoUrl = URL.createObjectURL(gameState.lastRecordedBlob);
+                    gameState.lastRecordedUrl = videoUrl;
+                    gameState.hasRecordedBlob = true;
+                } catch (e) {
+                    console.error('Failed to recreate object URL from lastRecordedBlob:', e);
+                    videoUrl = null;
+                }
+            } else if (gameState.lastRecordedUrl && typeof gameState.lastRecordedUrl === 'string' && gameState.lastRecordedUrl.startsWith('data:')) {
+                // If we previously persisted a data: URL (base64), use it directly
+                videoUrl = gameState.lastRecordedUrl;
             }
+            // Note: do NOT accept stored blob: URLs from previous sessions (they may be revoked/invalid)
+            // This prevents blob:null/... errors when assigning to <video>.src
+            
             if (videoUrl) {
-                const reviewEl = document.getElementById('reviewVideo');
+                // use dedicated end-of-game modal so Save/Cancel are available
+                const reviewEl = document.getElementById('endGameReviewVideo') || document.getElementById('reviewVideo');
                 if (reviewEl) reviewEl.src = videoUrl;
-                const reviewModal = document.getElementById('videoReviewModal');
-                if (reviewModal) reviewModal.classList.add('active');
+                const endModal = document.getElementById('endGameVideoModal');
+                if (endModal) {
+                    endModal.classList.add('active');
+                } else {
+                    const reviewModal = document.getElementById('videoReviewModal');
+                    if (reviewModal) reviewModal.classList.add('active');
+                }
                 logTest && typeof logTest === 'function' && logTest('게임 종료: 녹화된 영상이 있으므로 저장/미리보기를 표시합니다.');
-                console.log('showEndScreen: preview modal available.');
+                console.log('showEndScreen: end-game preview modal available.');
             }
         }
     } catch (e) {
@@ -1057,14 +1117,41 @@ async function runAuto5sRecord() {
     }
 }
 
-function pauseRecordingAndShowReview() { if (mediaRecorder?.state === "recording") mediaRecorder.stop(); }
+function pauseRecordingAndShowReview() {
+    // mark that recording was active so we can resume later without re-requesting permissions
+    if (mediaRecorder?.state === "recording") {
+        gameState._resumeAfterReview = true;
+        mediaRecorder.stop();
+    } else {
+        gameState._resumeAfterReview = false;
+    }
+}
+
 function closeReviewAndResumeRecording()
 {
-    document.getElementById('videoReviewModal').classList.remove('active');
+    const modal = document.getElementById('videoReviewModal');
+    if (modal) modal.classList.remove('active');
     const reviewVideo = document.getElementById('reviewVideo');
-    URL.revokeObjectURL(reviewVideo.src);
-    reviewVideo.src = '';
-    startRecording();
+    try {
+        if (reviewVideo && reviewVideo.src) {
+            // Only revoke non-data URLs and only if it's not the persisted lastRecordedUrl
+            if (typeof reviewVideo.src === 'string' && reviewVideo.src.startsWith('blob:')) {
+                try { URL.revokeObjectURL(reviewVideo.src); } catch(e){}
+            }
+            reviewVideo.src = '';
+        }
+    } catch(e) { console.error('closeReviewAndResumeRecording cleanup failed', e); }
+
+    // Resume recording only if we paused it for review (avoid re-requesting camera permissions)
+    if (gameState._resumeAfterReview) {
+        gameState._resumeAfterReview = false;
+        // If we already have a stream, start recorder; otherwise do not force camera start
+        if (currentStream) {
+            startRecording();
+        } else {
+            console.log('Not resuming recording because no active stream is available.');
+        }
+    }
 }
 
 window.onVideoSaved = (gameId, videoUri) => {
@@ -1080,13 +1167,14 @@ function saveReviewedVideo()
 {
     // 1. 녹화된 데이터가 있는지 확인
     let blob = null;
-    if (recordedChunks && recordedChunks.length > 0) {
+        if (recordedChunks && recordedChunks.length > 0) {
         blob = new Blob(recordedChunks, { type: recordedChunks[0]?.type || 'video/webm' });
     } else if (gameState.lastRecordedBlob) {
         blob = gameState.lastRecordedBlob;
     } else {
         alert("저장할 녹화 데이터가 없습니다.");
-        closeReviewModal(); // 데이터가 없으면 그냥 모달만 닫음
+        // close whichever video modal (end-game or in-game) is active
+        closeActiveVideoModal();
         return;
     }
 
@@ -1104,18 +1192,18 @@ function saveReviewedVideo()
             window.AndroidInterface.saveVideo(base64data, gameState.currentGameId.toString());
             // close modal after handing off to native
         } else {
-            console.error("Android interface not found for saving video. Creating explicit download link.");
-            // Blob URL 생성
-            const fileUrl = URL.createObjectURL(blob);
+            console.error("Android interface not found for saving video. Creating explicit download link and persisting data URL to history.");
+            // Use data URL (reader.result) so it can be stored in localStorage and played back later
+            const dataUrl = reader.result; // full data URI like data:video/webm;base64,....
 
-            // 1) gameHistory에 URL 저장
+            // 1) gameHistory에 data URL 저장
             try {
                 const idx = gameHistory.findIndex(r => r.id && r.id.toString() === (gameState.currentGameId || '').toString());
                 if (idx > -1) {
-                    gameHistory[idx].videoUrl = fileUrl;
+                    gameHistory[idx].videoUrl = dataUrl;
                     saveHistory();
-                    logTest && typeof logTest === 'function' && logTest('게임 기록에 비디오 URL 저장됨: ' + gameState.currentGameId);
-                    console.log(`Video URL saved in gameHistory for game ID ${gameState.currentGameId}`);
+                    logTest && typeof logTest === 'function' && logTest('게임 기록에 비디오 데이터 저장됨: ' + gameState.currentGameId);
+                    console.log(`Video data URL saved in gameHistory for game ID ${gameState.currentGameId}`);
                 }
             } catch (e) {
                 console.error('gameHistory 저장 실패:', e);
@@ -1135,7 +1223,7 @@ function saveReviewedVideo()
                         controls.appendChild(dl);
                     }
                     const ext = blob.type && blob.type.includes('mp4') ? 'mp4' : 'webm';
-                    dl.href = fileUrl;
+                    dl.href = dataUrl;
                     dl.download = `record_${gameState.currentGameId || Date.now()}.${ext}`;
                     dl.textContent = '다운로드(Download)';
                     dl.target = '_blank';
@@ -1144,12 +1232,12 @@ function saveReviewedVideo()
                     // 자동으로 다운로드 트리거하고 모달 닫기 (사용자 클릭 흐름 내에서 안전)
                     try {
                         dl.click();
-                        // cleanup link after use (do NOT revoke fileUrl; keep it for history playback)
+                        // cleanup link after use
                         setTimeout(() => {
                             if (dl && dl.parentNode) dl.parentNode.removeChild(dl);
                         }, 1000);
                         // close modal and reset data
-                        closeReviewModal();
+                        closeActiveVideoModal();
                     } catch (e) {
                         console.error('자동 다운로드 실패:', e);
                     }
@@ -1157,7 +1245,7 @@ function saveReviewedVideo()
                     // fallback: expose link in test panel if modal controls missing
                     const dlTest = document.getElementById('downloadLinkTest');
                     if (dlTest) {
-                        dlTest.href = fileUrl;
+                        dlTest.href = dataUrl;
                         const ext = blob.type && blob.type.includes('mp4') ? 'mp4' : 'webm';
                         dlTest.download = `record_${gameState.currentGameId || Date.now()}.${ext}`;
                         dlTest.style.display = 'block';
@@ -1167,7 +1255,7 @@ function saveReviewedVideo()
                         try {
                             dlTest.click();
                             // keep fileUrl for history playback; do not revoke
-                            closeReviewModal();
+                            closeActiveVideoModal();
                         } catch (e) {
                             console.error('테스트 패널 자동 다운로드 실패:', e);
                         }
@@ -1181,8 +1269,8 @@ function saveReviewedVideo()
             return;
         }
 
-        // 6. 저장 요청 후, 모달을 닫고 데이터를 초기화
-        closeReviewModal();
+            // 6. 저장 요청 후, 모달을 닫고 데이터를 초기화
+        closeActiveVideoModal();
     };
 
     reader.onerror = () =>
@@ -1218,6 +1306,23 @@ function closeReviewModal()
     recordedChunks = [];
 }
 
+function closeEndGameModal() {
+    const modal = document.getElementById('endGameVideoModal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    const v = document.getElementById('endGameReviewVideo');
+    if (v && v.src) {
+        try { URL.revokeObjectURL(v.src); } catch(e) {}
+        v.src = '';
+    }
+}
+
+function closeActiveVideoModal() {
+    const end = document.getElementById('endGameVideoModal');
+    if (end && end.classList.contains('active')) { closeEndGameModal(); return; }
+    closeReviewModal();
+}
+
 //
 //function saveVideo() {
 //    const blob = new Blob(recordedChunks, { type: 'video/webm' });
@@ -1244,29 +1349,37 @@ function playHistoryVideo(videoUrl) {
 
     // Otherwise use in-page review modal to play the video
     try {
-        const reviewModal = document.getElementById('videoReviewModal');
-        const reviewVideo = document.getElementById('reviewVideo');
+        // Use a separate modal for history playback so it doesn't affect in-game recording state
+        const reviewModal = document.getElementById('historyVideoModal');
+        const reviewVideo = document.getElementById('historyReviewVideo');
         if (!reviewModal || !reviewVideo) {
-            // fallback: open new window/tab
             window.open(videoUrl, '_blank');
             return;
         }
 
-        // If the videoUrl is a base64 data URI, assign directly; otherwise set as source
         reviewVideo.src = videoUrl;
         reviewVideo.controls = true;
         reviewVideo.autoplay = true;
         reviewVideo.loop = false;
         reviewModal.classList.add('active');
-        // attempt to play (may be blocked without user gesture on some browsers)
         const playPromise = reviewVideo.play();
         if (playPromise && typeof playPromise.then === 'function') {
             playPromise.catch(err => console.warn('Auto-play prevented:', err));
         }
     } catch (e) {
         console.error('playHistoryVideo failed:', e);
-        // last resort: open in new tab
         window.open(videoUrl, '_blank');
+    }
+}
+
+function closeHistoryVideo() {
+    const modal = document.getElementById('historyVideoModal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    const v = document.getElementById('historyReviewVideo');
+    if (v && v.src) {
+        try { URL.revokeObjectURL(v.src); } catch(e) {}
+        v.src = '';
     }
 }
 

@@ -458,8 +458,31 @@
         <div class="video-controls">
             <button id="slowPlayBtn" class="modal-action">느리게 재생(Slow)</button>
             <button id="normalPlayBtn" class="modal-action">보통 재생(Normal)</button>
+            <!-- Save removed for in-game review; only close/resume exists -->
+            <button class="modal-btn" onclick="closeReviewAndResumeRecording()">닫기(Close)</button>
+        </div>
+    </div>
+</div>
+
+<!-- History playback modal (separate from in-game review) -->
+<div id="historyVideoModal" class="modal">
+    <div class="modal-content">
+        <h2 style="margin-top:0;">영상 재생(Playback)</h2>
+        <video id="historyReviewVideo" controls style="width:100%;"></video>
+        <div class="video-controls">
+            <button class="modal-btn" onclick="closeHistoryVideo()">닫기(Close)</button>
+        </div>
+    </div>
+</div>
+
+<!-- End-of-game review modal (shows Save/Cancel) -->
+<div id="endGameVideoModal" class="modal">
+    <div class="modal-content">
+        <h2 style="margin-top:0;">경기 녹화 저장(Record Save)</h2>
+        <video id="endGameReviewVideo" controls style="width:100%;"></video>
+        <div class="video-controls">
             <button class="modal-btn" onclick="saveReviewedVideo()">저장(Save)</button>
-            <button class="modal-btn" onclick="closeReviewBtn()">취소(Cancel)</button>
+            <button class="modal-btn" onclick="closeEndGameModal()">취소(Cancel)</button>
         </div>
     </div>
 </div>
