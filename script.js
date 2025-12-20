@@ -2,6 +2,45 @@
  * Sport Scoreboard - Script
  */
 
+// In-page console logger (buffers logs until DOM is ready, then shows a textarea)
+(function(){
+    const origLog = console.log.bind(console);
+    const origWarn = console.warn.bind(console);
+    const origError = console.error.bind(console);
+    const buf = [];
+
+    function formatArgs(args){
+        return args.map(a => {
+            try { return (typeof a === 'object') ? JSON.stringify(a) : String(a); } catch(e){ return String(a); }
+        }).join(' ');
+    }
+
+    console.log = function(...args){ buf.push({type:'log', text: formatArgs(args)}); origLog(...args); };
+    console.warn = function(...args){ buf.push({type:'warn', text: formatArgs(args)}); origWarn(...args); };
+    console.error = function(...args){ buf.push({type:'error', text: formatArgs(args)}); origError(...args); };
+
+    function createConsoleUI(){
+        if (document.getElementById('inpageConsole')) return;
+        const ta = document.createElement('textarea');
+        ta.id = 'inpageConsole';
+        ta.readOnly = true;
+        ta.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;height:140px;z-index:99999;resize:vertical;background:#111;color:#0f0;padding:8px;font-size:12px;border-radius:6px;opacity:0.95;';
+        document.body.appendChild(ta);
+        for (const item of buf) {
+            ta.value += `[${new Date().toLocaleTimeString()}] ${item.type.toUpperCase()}: ${item.text}\n`;
+        }
+        ta.scrollTop = ta.scrollHeight;
+        // expose a helper to log into this UI directly
+        window.__inpageConsole = { el: ta, write: (s)=>{ ta.value += s + '\n'; ta.scrollTop = ta.scrollHeight; } };
+    }
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        try { createConsoleUI(); } catch(e){}
+    } else {
+        document.addEventListener('DOMContentLoaded', () => { try { createConsoleUI(); } catch(e){} });
+    }
+})();
+
 // --- 1. STATE AND GLOBAL VARIABLES ---
 let gameState = {
     selectedGame: 'badminton',
@@ -1715,3 +1754,23 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
 });
+
+(function(){
+  // 이미 있으면 재사용
+  let logEl = document.getElementById('inpageConsole');
+  if (!logEl) {
+    logEl = document.createElement('textarea');
+    logEl.id = 'inpageConsole';
+    logEl.style = 'position:fixed;left:8px;right:8px;bottom:8px;height:140px;z-index:99999;resize:vertical;background:#111;color:#0f0;padding:8px;font-size:12px;';
+    document.body.appendChild(logEl);
+  }
+  const origLog = console.log;
+  console.log = function(...args){
+    try {
+      const txt = args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
+      logEl.value += `[${new Date().toLocaleTimeString()}] ${txt}\n`;
+      logEl.scrollTop = logEl.scrollHeight;
+    } catch(e){}
+    origLog.apply(console, args);
+  };
+})();
