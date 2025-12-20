@@ -24,7 +24,12 @@
         const ta = document.createElement('textarea');
         ta.id = 'inpageConsole';
         ta.readOnly = true;
+        // 하단
+        // ta.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;height:140px;z-index:99999;resize:vertical;background:#111;color:#0f0;padding:8px;font-size:12px;border-radius:6px;opacity:0.95;';
+        // 상단 우측
         ta.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;height:140px;z-index:99999;resize:vertical;background:#111;color:#0f0;padding:8px;font-size:12px;border-radius:6px;opacity:0.95;';
+        // 중앙
+        // ta.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;height:140px;z-index:99999;resize:vertical;background:#111;color:#0f0;padding:8px;font-size:12px;border-radius:6px;opacity:0.95;';
         document.body.appendChild(ta);
         for (const item of buf) {
             ta.value += `[${new Date().toLocaleTimeString()}] ${item.type.toUpperCase()}: ${item.text}\n`;
