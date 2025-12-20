@@ -39,6 +39,7 @@ let isVoiceListening = false;
 
 let players = JSON.parse(localStorage.getItem('sport_players')) || [];
 let editingPlayerName = null; // 수정 모드 추적용
+let ServerCount = 1;    // 피클볼 서브 규칙 (처음만 1인 서브 교체)
 
 const gameRules = {
     badminton: { title: "배드민턴(Badminton) 규칙", image: "images/badminton.jpg", description: `<h3>서브<br><span class="eng-text">Service</span></h3><p>    서브는 대각선 방향으로 넣어야 하며, 네트에 걸리지 않고 상대방 코트의 서비스 라인 안에 떨어져야 합니다.<br><span class="eng-text">The service must be delivered diagonally and must land within the opponent's service court without hitting the net.</span></p><h3>점수<br><span class="eng-text">Scoring</span></h3><ul><li>      모든 랠리에서 점수를 얻는 랠리포인트 시스템입니다.<br><span class="eng-text">It is a rally point system where a point is awarded for every rally won.</span>    </li>    <li>      한 게임은 21점을 먼저 얻는 쪽이 승리합니다.<br>      <span class="eng-text">A game is won by the side that first scores 21 points.</span>    </li>    <li>      20-20 동점(듀스)일 경우, 2점 차이가 날 때까지 경기를 계속합니다.<br>      <span class="eng-text">In case of a 20-20 tie (deuce), the game continues until one side has a 2-point lead.</span>    </li>  </ul>` },
@@ -434,7 +435,16 @@ function updateWinnerScoreSettings(game)
         winScoreValue.textContent = "11";
     }
 }
-function updateScoreboard() { document.getElementById('score1').textContent = gameState.player1Score; document.getElementById('score2').textContent = gameState.player2Score; document.getElementById('player1SetsInline').textContent = gameState.player1Sets; document.getElementById('player2SetsInline').textContent = gameState.player2Sets; document.querySelector('#player1Score .player-name').textContent = gameState.player1Name; document.querySelector('#player2Score .player-name').textContent = gameState.player2Name; updateServeColor(); }
+function updateScoreboard() 
+{ 
+    document.getElementById('score1').textContent = gameState.player1Score; 
+    document.getElementById('score2').textContent = gameState.player2Score; 
+    document.getElementById('player1SetsInline').textContent = gameState.player1Sets; 
+    document.getElementById('player2SetsInline').textContent = gameState.player2Sets; 
+    document.querySelector('#player1Score .player-name').textContent = gameState.player1Name; 
+    document.querySelector('#player2Score .player-name').textContent = gameState.player2Name; 
+    updateServeColor(); 
+}
 function updateServeColor() { const s1 = document.getElementById('score1'); const s2 = document.getElementById('score2'); s1.classList.remove('serve'); s2.classList.remove('serve'); if (gameState.currentServer === 1) s1.classList.add('serve'); else s2.classList.add('serve'); }
 
 function showEndScreen(winner) {
@@ -721,7 +731,8 @@ function speakCurrentScore()
             voiceval = `${p1} 대 ${p2} 동점`;
         } else
             voiceval = `${p1} 대 ${p2}`;
-        if(gameState.selectedGame == 'pickleball') {
+        if(gameState.selectedGame == 'pickleball' && (p1 + p2) % 2 == 1){
+            const ServerCount = gameState.currentServer == 1 ? '일' : '이';
             voiceval = voiceval + ServerCount + '번 서브';
         }
         speakScore(voiceval);
