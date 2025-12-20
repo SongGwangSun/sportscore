@@ -16,12 +16,36 @@
         }).join(' ');
     }
 
-    console.log = function(...args){ buf.push({type:'log', text: formatArgs(args)}); origLog(...args); };
-    console.warn = function(...args){ buf.push({type:'warn', text: formatArgs(args)}); origWarn(...args); };
-    console.error = function(...args){ buf.push({type:'error', text: formatArgs(args)}); origError(...args); };
+    console.log = function(...args){
+        const text = formatArgs(args);
+        buf.push({type:'log', text});
+        try {
+            const ta = document.getElementById('inpageConsole');
+            if (ta) { ta.value += `[${new Date().toLocaleTimeString()}] LOG: ${text}\n`; ta.scrollTop = ta.scrollHeight; }
+        } catch(e){}
+        origLog(...args);
+    };
+    console.warn = function(...args){
+        const text = formatArgs(args);
+        buf.push({type:'warn', text});
+        try {
+            const ta = document.getElementById('inpageConsole');
+            if (ta) { ta.value += `[${new Date().toLocaleTimeString()}] WARN: ${text}\n`; ta.scrollTop = ta.scrollHeight; }
+        } catch(e){}
+        origWarn(...args);
+    };
+    console.error = function(...args){
+        const text = formatArgs(args);
+        buf.push({type:'error', text});
+        try {
+            const ta = document.getElementById('inpageConsole');
+            if (ta) { ta.value += `[${new Date().toLocaleTimeString()}] ERROR: ${text}\n`; ta.scrollTop = ta.scrollHeight; }
+        } catch(e){}
+        origError(...args);
+    };
 
     function createConsoleUI(){
-        if (document.getElementById('inpageConsole')) return;
+        // if (document.getElementById('inpageConsole')) return;
         const wrapper = document.createElement('div');
         wrapper.id = 'inpageConsoleWrapper';
         // position at top-left so toggle is always visible
@@ -31,20 +55,24 @@
         btn.id = 'inpageConsoleToggle';
         btn.textContent = 'Log';
         btn.title = 'Toggle logs';
-        btn.style.cssText = 'background:#222;color:#0f0;border:1px solid #444;padding:6px 8px;border-radius:6px;font-size:12px;cursor:pointer;opacity:0.95;';
+        btn.style.cssText = 'margin-bottom:6px;';
+        btn.onclick = () => { ta.style.display = (ta.style.display === 'none') ? 'block' : 'none'; };
+        // btn.style.cssText = 'background:#222;color:#0f0;border:1px solid #444;padding:6px 8px;border-radius:6px;font-size:12px;cursor:pointer;opacity:0.95;';
 
         const ta = document.createElement('textarea');
         ta.id = 'inpageConsole';
         ta.readOnly = true;
+        
+
         ta.style.cssText = 'width:320px;height:140px;resize:vertical;background:#111;color:#0f0;padding:8px;font-size:12px;border-radius:6px;opacity:0.95;border:1px solid #333;display:none;';
 
-        btn.addEventListener('click', () => {
-            if (ta.style.display === 'none' || ta.style.display === '') {
-                ta.style.display = 'block';
-            } else {
-                ta.style.display = 'none';
-            }
-        });
+        // btn.addEventListener('click', () => {
+        //     if (ta.style.display === 'none' || ta.style.display === '') {
+        //         ta.style.display = 'block';
+        //     } else {
+        //         ta.style.display = 'none';
+        //     }
+        // });
 
         wrapper.appendChild(btn);
         wrapper.appendChild(ta);
@@ -1808,23 +1836,5 @@ document.addEventListener('DOMContentLoaded', function () {
 
 });
 
-(function(){
-  // 이미 있으면 재사용
-  let logEl = document.getElementById('inpageConsole');
-  if (!logEl) {
-    logEl = document.createElement('textarea');
-    logEl.id = 'inpageConsole';
-    logEl.style = 'position:fixed;left:8px;right:8px;bottom:8px;height:140px;z-index:99999;resize:vertical;background:#111;color:#0f0;padding:8px;font-size:12px;';
-    document.body.appendChild(logEl);
-  }
-  const origLog = console.log;
-  console.log = function(...args){
-    try {
-      const txt = args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
-      logEl.value += `[${new Date().toLocaleTimeString()}] ${txt}\n`;
-      logEl.scrollTop = logEl.scrollHeight;
-    } catch(e){}
-    origLog.apply(console, args);
-  };
-})();
+// Duplicate bottom console removed — top `createConsoleUI()` handles the in-page console and log buffering.
 
