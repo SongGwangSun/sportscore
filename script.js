@@ -1358,7 +1358,6 @@ function openPlayerNamesPicker(targetInputId) {
         {
             playertext = playertext.padEnd(40, ' ');
         }
-        playertext += ' ▶';
         item.innerHTML = `
             <div style="white-space: pre; display: flex; justify-content: space-between; align-items: center;">
                     <p style="margin: 4px 0 0; font-size: 0.85rem; color: #666;"> ${playertext} </p>
