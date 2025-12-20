@@ -526,7 +526,11 @@ function showEndScreen(winner) {
     
     const victoryImageUrl = `images/win_${gameState.selectedGame}.jpg`; 
     gameEndScreen.style.backgroundImage = `url('${victoryImageUrl}')`;
-
+    const victorySound = document.getElementById('victorySound');
+    if (victorySound && !victorySound.src) {
+        victorySound.src = "sounds/victory.mp3";
+    }
+    victorySound?.play().catch(e => console.error("Audio play failed:", e));
     // If there is recorded video data, show review/save modal to ask user to save
     try {
         if (recordedChunks && recordedChunks.length > 0) {
@@ -538,6 +542,7 @@ function showEndScreen(winner) {
             const reviewModal = document.getElementById('videoReviewModal');
             if (reviewModal) reviewModal.classList.add('active');
             logTest && typeof logTest === 'function' && logTest('게임 종료: 녹화된 영상이 있으므로 저장/미리보기를 표시합니다.');
+            console.log('showEndScreen: preview modal len.', recordedChunks.length);
         }
     } catch (e) {
         console.error('showEndScreen: preview modal failed', e);
@@ -545,11 +550,7 @@ function showEndScreen(winner) {
 
     showScreen('gameEnd');
     triggerConfetti();
-   const victorySound = document.getElementById('victorySound');
-   if (victorySound && !victorySound.src) {
-       victorySound.src = "sounds/victory.mp3";
-   }
-   victorySound?.play().catch(e => console.error("Audio play failed:", e));
+
 }
 
 function triggerConfetti() { const canvas = document.getElementById('confettiCanvas'); const myConfetti = confetti.create(canvas, { resize: true }); myConfetti({ particleCount: 150, spread: 180, origin: { y: 0.6 } }); }
@@ -922,7 +923,9 @@ function startRecording()
                  dl.download = `test_record_${Date.now()}.${ext}`;
                  dl.style.display = 'block';
                  dl.textContent = `녹화 파일 다운로드 (${dl.download})`;
+                 console.log("textContent set for download link:", dl.textContent);
              }
+             console.log('textContent: recordedChunks len.', recordedChunks.length);
              const chkPlayback = document.getElementById('chkPlayback');
              if (chkPlayback) chkPlayback.checked = true;
         };
@@ -1044,6 +1047,7 @@ function saveReviewedVideo()
                     gameHistory[idx].videoUrl = fileUrl;
                     saveHistory();
                     logTest && typeof logTest === 'function' && logTest('게임 기록에 비디오 URL 저장됨: ' + gameState.currentGameId);
+                    console.log(`Video URL saved in gameHistory for game ID ${gameState.currentGameId}`);
                 }
             } catch (e) {
                 console.error('gameHistory 저장 실패:', e);
@@ -1068,6 +1072,7 @@ function saveReviewedVideo()
                     dl.textContent = '다운로드(Download)';
                     dl.target = '_blank';
                     logTest && typeof logTest === 'function' && logTest('다운로드 버튼이 준비되었습니다. 곧 자동으로 다운로드가 시작됩니다.');
+                    console.log('Explicit download link created:', dl);
                     // 자동으로 다운로드 트리거하고 모달 닫기 (사용자 클릭 흐름 내에서 안전)
                     try {
                         dl.click();
@@ -1090,6 +1095,7 @@ function saveReviewedVideo()
                         dlTest.style.display = 'block';
                         dlTest.textContent = `다운로드 파일: ${dlTest.download}`;
                         logTest && typeof logTest === 'function' && logTest('테스트 패널에 다운로드 링크가 생성되었습니다. 곧 자동 다운로드가 시도됩니다.');
+                        console.log('Download link created in test panel:', dlTest);
                         try {
                             dlTest.click();
                             // keep fileUrl for history playback; do not revoke
@@ -1470,7 +1476,7 @@ function renderHistoryList()
             });
             setsHtml += '</div>';
         }
-
+        console.log('Rendering history record:', record);
         item.innerHTML = `
             <div class="history-item-header">
                 <strong>${gameTitle}</strong>
