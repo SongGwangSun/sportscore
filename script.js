@@ -1808,3 +1808,24 @@ document.addEventListener('DOMContentLoaded', function () {
     origLog.apply(console, args);
   };
 })();
+
+(function makeDraggable(el){
+  el.style.cursor = 'move';
+  let isDown=false, startX, startY, origLeft, origTop;
+  el.addEventListener('mousedown', e => {
+    isDown = true;
+    startX = e.clientX; startY = e.clientY;
+    const rect = el.getBoundingClientRect();
+    origLeft = rect.left; origTop = rect.top;
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', e => {
+    if (!isDown) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    el.style.left = (origLeft + dx) + 'px';
+    el.style.top = (origTop + dy) + 'px';
+    el.style.right = 'auto'; el.style.bottom = 'auto';
+  });
+  window.addEventListener('mouseup', () => isDown = false);
+})(document.getElementById('inpageConsole'));
