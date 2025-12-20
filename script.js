@@ -1354,23 +1354,34 @@ document.addEventListener('DOMContentLoaded', function () {
     initializeApp();
     loadVoices();
 
-    document.getElementById('player1Score').addEventListener('click', () => handleRallyWonBy(1));
-    document.getElementById('player2Score').addEventListener('click', () => handleRallyWonBy(2));
-    document.getElementById('recordStopButton').addEventListener('click', pauseRecordingAndShowReview);
-    document.getElementById('slowPlayBtn').addEventListener('click', () => { document.getElementById('reviewVideo').playbackRate = 0.5; });
-    document.getElementById('normalPlayBtn').addEventListener('click', () => { document.getElementById('reviewVideo').playbackRate = 1.0; });
-    document.getElementById('closeReviewBtn').addEventListener('click', closeReviewAndResumeRecording);
-    
+    const p1ScoreEl = document.getElementById('player1Score');
+    const p2ScoreEl = document.getElementById('player2Score');
+    const recordStopBtn = document.getElementById('recordStopButton');
+    const slowPlayBtn = document.getElementById('slowPlayBtn');
+    const normalPlayBtn = document.getElementById('normalPlayBtn');
+    const closeReviewBtn = document.getElementById('closeReviewBtn');
+
+    if (p1ScoreEl) p1ScoreEl.addEventListener('click', () => handleRallyWonBy(1));
+    if (p2ScoreEl) p2ScoreEl.addEventListener('click', () => handleRallyWonBy(2));
+    if (recordStopBtn) recordStopBtn.addEventListener('click', pauseRecordingAndShowReview);
+    if (slowPlayBtn) slowPlayBtn.addEventListener('click', () => { const rv = document.getElementById('reviewVideo'); if (rv) rv.playbackRate = 0.5; });
+    if (normalPlayBtn) normalPlayBtn.addEventListener('click', () => { const rv = document.getElementById('reviewVideo'); if (rv) rv.playbackRate = 1.0; });
+    if (closeReviewBtn) closeReviewBtn.addEventListener('click', closeReviewAndResumeRecording);
+
     const saveVideoButton = document.querySelector('#videoReviewModal .modal-action[onclick="saveVideo()"]');
     if (saveVideoButton) {
         saveVideoButton.addEventListener('click', saveVideo);
     }
 
     const menu = document.getElementById('scoreboardMenu');
-    menu.addEventListener('click', (event) => { const action = event.target.dataset.action; if (action && window[action]) { window[action](); menu.style.display = 'none'; } });
     const menuButton = document.getElementById('scoreboardMenuButton');
-    menuButton.addEventListener('click', (event) => { event.stopPropagation(); menu.style.display = menu.style.display === 'block' ? 'none' : 'block'; });
-    window.addEventListener('click', (event) => { if (!menu.contains(event.target) && !menuButton.contains(event.target)) { menu.style.display = 'none'; } });
+    if (menu) {
+        menu.addEventListener('click', (event) => { const action = event.target.dataset.action; if (action && window[action]) { window[action](); if (menu) menu.style.display = 'none'; } });
+    }
+    if (menuButton) {
+        menuButton.addEventListener('click', (event) => { event.stopPropagation(); if (menu) menu.style.display = menu.style.display === 'block' ? 'none' : 'block'; });
+    }
+    window.addEventListener('click', (event) => { if (menu && menuButton && !menu.contains(event.target) && !menuButton.contains(event.target)) { menu.style.display = 'none'; } });
 
     // --- Recording test panel handlers ---
     const btnStartCamTest = document.getElementById('btnStartCamTest');
