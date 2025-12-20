@@ -200,12 +200,8 @@ function renderPlayerList() {
                     </p>
                 </div>
                 <div class="action-btns">
-                    <button onclick="editPlayer('${player.name}')" style="padding: 4px 8px;">수정</button>
                     <button onclick="deletePlayer('${player.name}')" style="padding: 4px 8px; color: red;">삭제</button>
                 </div>
-            </div>
-            <div style="margin-top: 8px; border-top: 1px dashed #eee; padding-top: 5px; font-size: 0.75rem; color: #999;">
-                최근 기록: ${player.history.slice(-3).reverse().join(', ') || '없음'}
             </div>
         `;
         listContainer.appendChild(item);
@@ -1277,20 +1273,52 @@ function openPlayerNamesPicker(targetInputId) {
 
     players.forEach(player => {
         const item = document.createElement('button');
-        item.className = 'picker-name-item';
+        // item.className = 'picker-name-item';
+        item.className = 'player-card';
+
+        // // 버튼 내부 디자인: 이름과 간단한 전적 표시
+        // const winRate = (player.wins + player.losses) > 0
+        //     ? ((player.wins / (player.wins + player.losses)) * 100).toFixed(0)
+        //     : 0;
+
+        // item.innerHTML = `
+        //     <span class="name">${player.name}</span>
+        //     <span class="record" style="font-size: 0.8rem; color: #666; margin-left: 8px;">
+        //         (${player.wins}W-${player.losses}L, ${winRate}%)
+        //     </span>
+        // `;
+        item.style = `
+            width: 300px;
+            background: #fff;
+            margin-bottom: 8px;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        `;
 
         // 버튼 내부 디자인: 이름과 간단한 전적 표시
         const winRate = (player.wins + player.losses) > 0
-            ? ((player.wins / (player.wins + player.losses)) * 100).toFixed(0)
+            ? ((player.wins / (player.wins + player.losses)) * 100).toFixed(1)
             : 0;
-
+        let playertext = '';
+        if (player.wins + player.losses === 0) {
+            playertext = `${player.name} 경기 없음`;
+        } else {
+            playertext = `${player.name} 전적: ${player.wins}승 ${player.losses}패 (승률 ${winRate}%)`;
+        }
+        if(playertext.length > 40) {
+            playertext = playertext.substring(0, 37) + '...';
+        }
+        else
+        {
+            playertext = playertext.padEnd(40, ' ');
+        }
+        playertext += ' ▶';
         item.innerHTML = `
-            <span class="name">${player.name}</span>
-            <span class="record" style="font-size: 0.8rem; color: #666; margin-left: 8px;">
-                (${player.wins}W-${player.losses}L, ${winRate}%)
-            </span>
+            <div style="white-space: pre; display: flex; justify-content: space-between; align-items: center;">
+                    <p style="margin: 4px 0 0; font-size: 0.85rem; color: #666;"> ${playertext} </p>
+            </div>
         `;
-
         // 클릭 시 해당 이름을 input에 넣고 모달 닫기
         item.onclick = () => {
             document.getElementById(targetInputId).value = player.name;
