@@ -24,7 +24,8 @@
         if (document.getElementById('inpageConsole')) return;
         const wrapper = document.createElement('div');
         wrapper.id = 'inpageConsoleWrapper';
-        wrapper.style.cssText = 'position:fixed;right:8px;bottom:8px;z-index:99999;display:flex;flex-direction:column;align-items:flex-end;gap:6px;';
+        // position at top-left so toggle is always visible
+        wrapper.style.cssText = 'position:fixed;left:8px;top:8px;z-index:2147483647;display:flex;flex-direction:column;align-items:flex-start;gap:6px;';
 
         const btn = document.createElement('button');
         btn.id = 'inpageConsoleToggle';
@@ -35,10 +36,10 @@
         const ta = document.createElement('textarea');
         ta.id = 'inpageConsole';
         ta.readOnly = true;
-        ta.style.cssText = 'width:320px;height:140px;resize:vertical;background:#111;color:#0f0;padding:8px;font-size:12px;border-radius:6px;opacity:0.95;border:1px solid #333;';
+        ta.style.cssText = 'width:320px;height:140px;resize:vertical;background:#111;color:#0f0;padding:8px;font-size:12px;border-radius:6px;opacity:0.95;border:1px solid #333;display:none;';
 
         btn.addEventListener('click', () => {
-            if (ta.style.display === 'none') {
+            if (ta.style.display === 'none' || ta.style.display === '') {
                 ta.style.display = 'block';
             } else {
                 ta.style.display = 'none';
