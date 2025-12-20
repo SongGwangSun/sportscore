@@ -73,7 +73,7 @@ window.onVoiceResult = function(text) {
 
     // 테스트 화면 처리
     if (document.getElementById('voiceSettings').classList.contains('active')) {
-        if (text.includes("원포인트") || text.includes("투포인트")) {
+        if (text.includes("원포인트") || text.includes("투포인트") || text.includes("1.") || text.includes("2.") || text.includes("1 포인트") || text.includes("2 포인트")) {
             recognizedWordSpan.textContent = text + " : OK";
             recognizedWordSpan.style.color = "green";
         }else{
@@ -87,11 +87,11 @@ window.onVoiceResult = function(text) {
 
     // 스코어보드 화면 처리
     if (document.getElementById('scoreboard').classList.contains('active') && useVoiceRecognition) {
-        if (text.includes("원포인트") || text.includes("원 포인트")) {
+        if (text.includes("원포인트") || text.includes("원 포인트") || text.includes("1.") || text.includes("1 포인트")) {
             handleRallyWonBy(1);
             // TTS로 피드백 (선택사항)
 //            if (gameState.useSTT) speakScore();
-        } else if (text.includes("투포인트") || text.includes("두포인트") || text.includes("두 포인트") || text.includes("투 포인트")) {
+        } else if (text.includes("투포인트") || text.includes("두포인트") || text.includes("두 포인트") || text.includes("투 포인트") || text.includes("2.") || text.includes("2 포인트")) {
             handleRallyWonBy(2);
             // TTS로 피드백 (선택사항)
 //            if (gameState.useSTT) speakScore();
