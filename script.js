@@ -41,6 +41,7 @@ let players = JSON.parse(localStorage.getItem('sport_players')) || [];
 let editingPlayerName = null; // 수정 모드 추적용
 let ServerCount = 1;    // 피클볼 서브 규칙 (처음만 1인 서브 교체)
 
+const koreascoreVoice = ["일", "이", "삼", "사", "오", "육", "칠", "팔", "구", "십"]; // 한국 점수
 const gameRules = {
     badminton: { title: "배드민턴(Badminton) 규칙", image: "images/badminton.jpg", description: `<h3>서브<br><span class="eng-text">Service</span></h3><p>    서브는 대각선 방향으로 넣어야 하며, 네트에 걸리지 않고 상대방 코트의 서비스 라인 안에 떨어져야 합니다.<br><span class="eng-text">The service must be delivered diagonally and must land within the opponent's service court without hitting the net.</span></p><h3>점수<br><span class="eng-text">Scoring</span></h3><ul><li>      모든 랠리에서 점수를 얻는 랠리포인트 시스템입니다.<br><span class="eng-text">It is a rally point system where a point is awarded for every rally won.</span>    </li>    <li>      한 게임은 21점을 먼저 얻는 쪽이 승리합니다.<br>      <span class="eng-text">A game is won by the side that first scores 21 points.</span>    </li>    <li>      20-20 동점(듀스)일 경우, 2점 차이가 날 때까지 경기를 계속합니다.<br>      <span class="eng-text">In case of a 20-20 tie (deuce), the game continues until one side has a 2-point lead.</span>    </li>  </ul>` },
     pingpong: { title: "탁구(TableTennis) 규칙", image: "images/pingpong.jpg", description: `<h3>서브 <span class="eng-text">(Service)</span></h3>  <p>    서브는 자신의 코트에 한 번, 상대방 코트에 한 번 바운드되어야 합니다.    <span class="eng-text">The service must bounce once in your own court and once in the opponent's court.</span>  </p>    <h3>점수 <span class="eng-text">(Scoring)</span></h3>  <ul>    <li>      한 게임은 11점을 먼저 얻는 쪽이 승리합니다.      <span class="eng-text">A game is won by the side that first scores 11 points.</span>    </li>    <li>      10-10 동점(듀스)일 경우, 2점 차이가 날 때까지 경기를 계속합니다.      <span class="eng-text">In case of a 10-10 tie (deuce), the game continues until one side has a 2-point lead.</span>    </li>    <li>      서브권은 2점마다 바뀝니다.      <span class="eng-text">The service changes every 2 points.</span>    </li>  </ul>` },
@@ -721,16 +722,15 @@ function speakCurrentScore()
     let p1 = gameState.player1Score, p2 = gameState.player2Score;
     if(gameState.selectedLang === 'ko-KR')
     {
-        let voiceval = '';
-        if (p1 === 10 || p2 === 10) {
-            if (p1 === 10 && p2 !== 10) voiceval = `십 대 ${p2}`;
-            if (p2 === 10 && p1 !== 10) voiceval = `${p1} 대 십`;
-            voiceval = `십 대 십 동점`;
-        }
+        let voiceval = koreascoreVoice[p1] + ' 대 ' + koreascoreVoice[p2];
+        // if (p1 === 10 || p2 === 10) {
+        //     if (p1 === 10 && p2 !== 10) voiceval = `십 대 ${p2}`;
+        //     if (p2 === 10 && p1 !== 10) voiceval = `${p1} 대 십`;
+        //     voiceval = `십 대 십 동점`;
+        // }
         if (p1 === p2) {
-            voiceval = `${p1} 대 ${p2} 동점`;
-        } else
-            voiceval = `${p1} 대 ${p2}`;
+            voiceval = voiceval + ' 동점 ';
+        } 
         if(gameState.selectedGame == 'pickleball' && (p1 + p2) % 2 == 1){
             const ServerCount = gameState.currentServer == 1 ? '일' : '이';
             voiceval = voiceval + ServerCount + '번 서브';
