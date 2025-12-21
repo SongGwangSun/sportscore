@@ -390,13 +390,65 @@ function showPlayerStats(playerName) {
         }
     });
 
-    // create win/loss pie chart
+    // create radar chart showing per-sport win rate (육각형 능력치 형태)
     const ctx2 = document.getElementById('playerWinChart').getContext('2d');
     if (_playerWinChart) _playerWinChart.destroy();
+
+    // Gather per-sport stats (games played and win rate)
+    const sportKeys = Object.keys(sportPresets);
+    const labelsRadar = sportKeys.map(k => (gameRules[k] && gameRules[k].title) ? gameRules[k].title.replace(' 규칙','') : k);
+    const gamesCounts = sportKeys.map(k => {
+        return gameHistory.filter(r => r.game === k && (r.player1Name === playerName || r.player2Name === playerName)).length;
+    });
+    const winRates = sportKeys.map(k => {
+        const matchesForSport = gameHistory.filter(r => r.game === k && (r.player1Name === playerName || r.player2Name === playerName));
+        const total = matchesForSport.length;
+        if (!total) return 0;
+        let w = 0;
+        matchesForSport.forEach(m => {
+            const isP1 = m.player1Name === playerName;
+            const pSets = isP1 ? m.player1Sets : m.player2Sets;
+            const oSets = isP1 ? m.player2Sets : m.player1Sets;
+            if (pSets > oSets) w++;
+        });
+        return Math.round((w / total) * 100); // percent (0-100)
+    });
+
     _playerWinChart = new Chart(ctx2, {
-        type: 'pie',
-        data: { labels: ['Wins','Losses'], datasets: [{ data: [wins, losses], backgroundColor: ['#4caf50','#f44336'] }] },
-        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        type: 'radar',
+        data: {
+            labels: labelsRadar,
+            datasets: [{
+                label: '승률 (%)',
+                data: winRates,
+                backgroundColor: 'rgba(54,162,235,0.15)',
+                borderColor: 'rgba(54,162,235,1)',
+                pointBackgroundColor: 'rgba(54,162,235,1)'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const idx = context.dataIndex;
+                            const val = context.formattedValue;
+                            const games = gamesCounts[idx] || 0;
+                            return `${context.dataset.label}: ${val}% (경기수: ${games})`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    suggestedMax: 100,
+                    ticks: { stepSize: 20 }
+                }
+            }
+        }
     });
 
     // show modal
