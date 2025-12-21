@@ -488,6 +488,65 @@ function saveHistory() {
 }
 function loadHistory() { const data = localStorage.getItem('gameHistory'); if (data) gameHistory = JSON.parse(data); }
 
+// --- IndexedDB helpers for storing large video Blobs ---
+function openVideoDB() {
+    return new Promise((resolve, reject) => {
+        if (!window.indexedDB) return reject(new Error('IndexedDB not supported'));
+        const req = indexedDB.open('SportScoreDB', 1);
+        req.onupgradeneeded = () => {
+            const db = req.result;
+            if (!db.objectStoreNames.contains('videos')) db.createObjectStore('videos', { keyPath: 'id' });
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error || new Error('IndexedDB open failed'));
+    });
+}
+
+function saveBlobToIDB(id, blob) {
+    return new Promise(async (resolve) => {
+        try {
+            const db = await openVideoDB();
+            const tx = db.transaction('videos', 'readwrite');
+            const store = tx.objectStore('videos');
+            const putReq = store.put({ id: String(id), blob: blob, type: blob.type, date: new Date().toISOString() });
+            putReq.onsuccess = () => {};
+            putReq.onerror = () => {};
+            tx.oncomplete = () => { try { db.close(); } catch(e){}; resolve(true); };
+            tx.onabort = tx.onerror = () => { try { db.close(); } catch(e){}; resolve(false); };
+        } catch (e) { console.error('saveBlobToIDB error', e); resolve(false); }
+    });
+}
+
+function getBlobFromIDB(id) {
+    return new Promise(async (resolve) => {
+        try {
+            const db = await openVideoDB();
+            const tx = db.transaction('videos', 'readonly');
+            const store = tx.objectStore('videos');
+            const getReq = store.get(String(id));
+            getReq.onsuccess = () => {
+                const rec = getReq.result;
+                try { db.close(); } catch(e){}
+                resolve(rec ? rec.blob : null);
+            };
+            getReq.onerror = () => { try { db.close(); } catch(e){}; resolve(null); };
+        } catch (e) { console.error('getBlobFromIDB error', e); resolve(null); }
+    });
+}
+
+function deleteBlobFromIDB(id) {
+    return new Promise(async (resolve) => {
+        try {
+            const db = await openVideoDB();
+            const tx = db.transaction('videos', 'readwrite');
+            const store = tx.objectStore('videos');
+            const delReq = store.delete(String(id));
+            delReq.onsuccess = () => { try { db.close(); } catch(e){}; resolve(true); };
+            delReq.onerror = () => { try { db.close(); } catch(e){}; resolve(false); };
+        } catch (e) { console.error('deleteBlobFromIDB error', e); resolve(false); }
+    });
+}
+
 // --- 3. UI & SCREEN MANAGEMENT ---
 function showScreen(screenId) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(screenId)?.classList.add('active'); }
 function displayGameInfo(gameId)
@@ -1250,12 +1309,28 @@ function saveReviewedVideo()
                     const estimatedBytes = Math.ceil((base64Part.length * 3) / 4);
                     const quotaSafeLimit = 2_500_000; // ~2.5 MB - conservative for localStorage
                     if (estimatedBytes > quotaSafeLimit) {
-                        // avoid storing large video data in localStorage; prompt user to download
-                        gameHistory[idx].videoUrl = null;
-                        saveHistory();
-                        logTest && typeof logTest === 'function' && logTest('비디오 데이터가 너무 커서 로컬에 저장되지 않았습니다. 다운로드 파일을 확인하세요.');
-                        alert('비디오 파일이 너무 커서 로컬 저장이 불가능합니다. 다운로드 파일을 확인하세요.');
-                        console.warn('Video data too large for localStorage; skipped storing videoUrl.');
+                        // Try to persist large blob in IndexedDB instead of localStorage
+                        try {
+                            (async () => {
+                                const saved = await saveBlobToIDB(gameState.currentGameId, blob);
+                                if (saved) {
+                                    gameHistory[idx].videoUrl = `indexed:${gameState.currentGameId}`;
+                                    saveHistory();
+                                    logTest && typeof logTest === 'function' && logTest('비디오 데이터가 IndexedDB에 저장되었습니다: ' + gameState.currentGameId);
+                                    console.log('Video saved to IndexedDB for game ID', gameState.currentGameId);
+                                } else {
+                                    gameHistory[idx].videoUrl = null;
+                                    saveHistory();
+                                    logTest && typeof logTest === 'function' && logTest('비디오 데이터가 로컬에 저장되지 않았습니다. 다운로드 파일을 확인하세요.');
+                                    alert('비디오 파일이 너무 커서 로컬 저장이 불가능합니다. 다운로드 파일을 확인하세요.');
+                                }
+                            })();
+                        } catch (eSave) {
+                            console.error('IndexedDB save failed', eSave);
+                            gameHistory[idx].videoUrl = null;
+                            saveHistory();
+                            alert('비디오 파일 저장 실패. 다운로드 파일을 확인하세요.');
+                        }
                     } else {
                         gameHistory[idx].videoUrl = dataUrl;
                         saveHistory();
@@ -1401,7 +1476,33 @@ function playHistoryVideo(videoUrl) {
             return;
         }
 
-        reviewVideo.src = videoUrl;
+        // support data:, blob: or indexed: references
+        if (typeof videoUrl === 'string' && videoUrl.startsWith('indexed:')) {
+            const id = videoUrl.split(':')[1];
+            getBlobFromIDB(id).then(blob => {
+                if (!blob) {
+                    alert('저장된 영상 데이터를 찾을 수 없습니다.');
+                    return;
+                }
+                try {
+                    const url = URL.createObjectURL(blob);
+                    reviewVideo.src = url;
+                    reviewModal.classList.add('active');
+                    const playPromise = reviewVideo.play();
+                    if (playPromise && typeof playPromise.then === 'function') playPromise.catch(err => console.warn('Auto-play prevented:', err));
+                } catch (e) { console.error('Failed to play blob from IDB', e); window.open(videoUrl, '_blank'); }
+            }).catch(e => { console.error('getBlobFromIDB failed', e); window.open(videoUrl, '_blank'); });
+        } else {
+            reviewVideo.src = videoUrl;
+            reviewVideo.controls = true;
+            reviewVideo.autoplay = true;
+            reviewVideo.loop = false;
+            reviewModal.classList.add('active');
+            const playPromise = reviewVideo.play();
+            if (playPromise && typeof playPromise.then === 'function') {
+                playPromise.catch(err => console.warn('Auto-play prevented:', err));
+            }
+        }
         reviewVideo.controls = true;
         reviewVideo.autoplay = true;
         reviewVideo.loop = false;
