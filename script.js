@@ -1050,7 +1050,7 @@ function startRecording()
                  dl.download = `test_record_${Date.now()}.${ext}`;
                  dl.style.display = 'block';
                  dl.textContent = `녹화 파일 다운로드 (${dl.download})`;
-                 console.log("textContent set for download link:", dl.textContent);
+                 console.log("textContent set for download link:", dl.href);
              }
              console.log('textContent: recordedChunks len.', recordedChunks.length);
              const chkPlayback = document.getElementById('chkPlayback');
@@ -1228,7 +1228,7 @@ function saveReviewedVideo()
                     dl.textContent = '다운로드(Download)';
                     dl.target = '_blank';
                     logTest && typeof logTest === 'function' && logTest('다운로드 버튼이 준비되었습니다. 곧 자동으로 다운로드가 시작됩니다.');
-                    console.log('Explicit download link created:', dl);
+                    console.log('Explicit download link created:', dl.href);
                     // 자동으로 다운로드 트리거하고 모달 닫기 (사용자 클릭 흐름 내에서 안전)
                     try {
                         dl.click();
@@ -1251,7 +1251,7 @@ function saveReviewedVideo()
                         dlTest.style.display = 'block';
                         dlTest.textContent = `다운로드 파일: ${dlTest.download}`;
                         logTest && typeof logTest === 'function' && logTest('테스트 패널에 다운로드 링크가 생성되었습니다. 곧 자동 다운로드가 시도됩니다.');
-                        console.log('Download link created in test panel:', dlTest);
+                        console.log('Download link created in test panel:', dlTest.href);
                         try {
                             dlTest.click();
                             // keep fileUrl for history playback; do not revoke
@@ -1664,7 +1664,7 @@ function renderHistoryList()
             });
             setsHtml += '</div>';
         }
-        console.log('Rendering history record:', record);
+        // console.log('Rendering history record:', record);
         item.innerHTML = `
             <div class="history-item-header">
                 <strong>${gameTitle}</strong>
