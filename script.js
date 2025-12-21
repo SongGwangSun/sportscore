@@ -571,6 +571,7 @@ function updateScoreboard()
 function updateServeColor() { const s1 = document.getElementById('score1'); const s2 = document.getElementById('score2'); s1.classList.remove('serve'); s2.classList.remove('serve'); if (gameState.currentServer === 1) s1.classList.add('serve'); else s2.classList.add('serve'); }
 
 function showEndScreen(winner) {
+    console.log('showEndScreen: start.');
     const gameEndScreen = document.getElementById('gameEnd');
     gameState.setScores.push({ p1: gameState.player1Score, p2: gameState.player2Score });
     if(winner === 1)
@@ -746,7 +747,8 @@ function checkSetWin()
     {
         gameState.setScores.push({ p1: player1Score, p2: player2Score });
         if (setWinner === 1) gameState.player1Sets++; else gameState.player2Sets++;
-        speakNarration(setWinner === 1 ? 'player1SetWin' : 'player2SetWin');
+        speakNarration(setWinner === 1 ? gameState.player1Name : gameState.player2Name);
+        // speakNarration(setWinner === 1 ? 'player1SetWin' : 'player2SetWin');
         if (!checkGameWin())
         {
             gameState.currentSet++;
@@ -798,7 +800,7 @@ async function startGame() {
         return alert('선수 이름을 입력하세요. Please enter player names.');
     if(gameState.player1Name === gameState.player2Name)
         return alert('선수 이름이 중복되었습니다. Please enter different player names.');
-    
+
     gameState.isRecording = document.getElementById('enableRecording').checked;
     // whether to capture audio along with video (user-configurable)
     gameState.recordWithAudio = !!document.getElementById('includeAudio')?.checked;
@@ -1207,7 +1209,7 @@ function saveReviewedVideo()
             window.AndroidInterface.saveVideo(base64data, gameState.currentGameId.toString());
             // close modal after handing off to native
         } else {
-            console.error("Android interface not found for saving video. Creating explicit download link and persisting data URL to history.");
+            // console.error("Android interface not found for saving video. Creating explicit download link and persisting data URL to history.");
             // Use data URL (reader.result) so it can be stored in localStorage and played back later
             const dataUrl = reader.result; // full data URI like data:video/webm;base64,....
 
@@ -1351,23 +1353,6 @@ function closeActiveVideoModal() {
     closeReviewModal();
 }
 
-//
-//function saveVideo() {
-//    const blob = new Blob(recordedChunks, { type: 'video/webm' });
-//    const reader = new FileReader();
-//    reader.readAsDataURL(blob);
-//    reader.onloadend = () => {
-//        const base64data = reader.result.split(',')[1];
-//        if (window.AndroidInterface?.saveVideo) {
-//            window.AndroidInterface.saveVideo(base64data, gameState.currentGameId.toString());
-//        } else {
-//            console.error("Android interface not found.");
-//        }
-//    };
-////    closeReviewAndResumeRecording();
-//    document.getElementById('videoReviewModal').classList.remove('active');
-//}
-
 function playHistoryVideo(videoUrl) {
     // If Android app provides a playback hook, use it
     if (window.AndroidInterface?.playVideo) {
@@ -1506,19 +1491,7 @@ function addNewSavedName() {
     const applyBtn = document.querySelector('.player-input-group .apply-btn');
     if (applyBtn) applyBtn.textContent = '추가(Add)';
 }
-//function addNewSavedName()
-//{
-//    const input = document.getElementById('newSavedName');
-//    const name = input.value.trim();
-//    if (name && !savedNames.includes(name))
-//    {
-//        savedNames.push(name);
-//        savePlayerNames();
-//        renderSavedNamesList();
-//    }
-//    input.value = '';
-//}
-//function deleteSavedName(name) { savedNames = savedNames.filter(n => n !== name); savePlayerNames(); renderSavedNamesList(); }
+
 /**
  * 선수 선택 피커를 열고, 등록된 선수 목록(전적 포함)을 표시합니다.
  * @param {string} targetInputId - 선택한 이름이 입력될 input 요소의 ID
@@ -1599,19 +1572,6 @@ function openPlayerNamesPicker(targetInputId) {
     modal.dataset.targetInput = targetInputId;
     modal.classList.add('active');
 }
-//function openPlayerNamesPicker(targetInputId)
-//{
-//    const listEl = document.getElementById('pickerNamesList');
-//    listEl.innerHTML = '';
-//    savedNames.forEach(name => { const item = document.createElement('button');
-//    item.className = 'picker-name-item';
-//    item.textContent = name;
-//    item.onclick = () => { document.getElementById(targetInputId).value = name;
-//    closePlayerNamesPicker();
-//    }; listEl.appendChild(item); });
-//    document.getElementById('playerNamesPickerModal').dataset.targetInput = targetInputId;
-//    document.getElementById('playerNamesPickerModal').classList.add('active');
-//}
 function closePlayerNamesPicker() { document.getElementById('playerNamesPickerModal').classList.remove('active'); }
 /**
  * 입력된 선수 이름을 게임 상태에 적용하고,
@@ -1647,16 +1607,7 @@ function applyPlayerNames()
     // 3. 로컬 스토리지 저장 및 리스트 UI 갱신 (기존에 만든 공통 함수 호출)
     updateStorageAndRender();
 }
-//function applyPlayerNames()
-//{
-//    const p1Name = document.getElementById('playerReg1').value.trim();
-//    const p2Name = document.getElementById('playerReg2').value.trim();
-//    gameState.player1Name = p1Name || 'Player 1';
-//    gameState.player2Name = p2Name || 'Player 2';
-//    if (p1Name && !savedNames.includes(p1Name)) savedNames.push(p1Name);
-//    if (p2Name && !savedNames.includes(p2Name)) savedNames.push(p2Name);
-//    savePlayerNames();
-//}
+
 function clearHistory() { if (confirm('모든 기록을 삭제하시겠습니까?\nDo you want to delete all records?')) { gameHistory = []; saveHistory(); renderHistoryList(); } }
 
 function renderHistoryList()
@@ -1722,7 +1673,6 @@ function renderHistoryList()
 function initializeApp()
 {
     renderPlayerList();
-    //loadPlayerNames();
     loadHistory();
     gameState.selectedLang = localStorage.getItem('selectedLang') || 'ko-KR';
     gameState.voiceName = localStorage.getItem('voiceName') || '';
@@ -1976,6 +1926,4 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
 });
-
-// Duplicate bottom console removed — top `createConsoleUI()` handles the in-page console and log buffering.
 
