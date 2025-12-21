@@ -207,6 +207,12 @@
             </div>
             <div id="recordingOptions" style="display: none;">
                 <div class="setting-item">
+                    <label for="includeAudio">오디오 포함(Include audio)</label>
+                    <label class="switch"><input type="checkbox" id="includeAudio">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
                     <label for="recordQuality">화질(Quality)</label>
                     <select id="recordQuality" class="text-input-modern">
                         <option value="medium">중간(Middle)</option>
@@ -220,12 +226,6 @@
                         <option value="user">전면(Front)</option>
                         <option value="environment">후면(Rear)</option>
                     </select>
-                </div>
-                <div class="setting-item">
-                    <label for="includeAudio">오디오 포함(Include audio)</label>
-                    <label class="switch"><input type="checkbox" id="includeAudio" checked>
-                        <span class="slider round"></span>
-                    </label>
                 </div>
             </div>
         </section>
