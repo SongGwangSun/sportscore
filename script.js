@@ -793,6 +793,12 @@ async function startGame() {
     gameState.setMemo = document.getElementById('setMemoInput').value;
     gameState.setScores = [];
     applyPlayerNames();
+
+    if(gameState.player1Name.trim() === '' || gameState.player2Name.trim() === '')
+        return alert('선수 이름을 입력하세요. Please enter player names.');
+    if(gameState.player1Name === gameState.player2Name)
+        return alert('선수 이름이 중복되었습니다. Please enter different player names.');
+    
     gameState.isRecording = document.getElementById('enableRecording').checked;
     // whether to capture audio along with video (user-configurable)
     gameState.recordWithAudio = !!document.getElementById('includeAudio')?.checked;
@@ -801,13 +807,9 @@ async function startGame() {
         facingMode = document.getElementById('cameraFacing').value;
         await startCamera(true);
     }
-//        const ttsToggle = document.getElementById('ttsToggle');
-        const voiceRecToggle = document.getElementById('voiceRecToggle'); // 새로 추가
-
-//        gameState.settings.useSTT = ttsToggle.checked;
-        gameState.useSTT = voiceRecToggle.checked;
-
-        useVoiceRecognition = voiceRecToggle.checked; // 새로 추가
+    const voiceRecToggle = document.getElementById('voiceRecToggle'); // 새로 추가
+    gameState.useSTT = voiceRecToggle.checked;
+    useVoiceRecognition = voiceRecToggle.checked; // 새로 추가
     // 음성인식 사용 여부에 따라 스코어보드 버튼 보이기/숨기기
     const voiceControlBtn = document.getElementById('voiceControlBtn');
     if (useVoiceRecognition) {

@@ -130,7 +130,7 @@
         <button class="back-btn" onclick="showGameSelection()" title="이전(Back)">←</button>
         <h1 id="selectedGameTitle"
             style="margin: 0; font-size: 1.25rem; position: absolute; left: 50%; transform: translateX(-50%);">
-            게임 설정(Game settings)</h1>
+            경기 진행(Game settings)</h1>
         <button class="start-btn-modern1" onclick="startGame()"
                 style="margin-left: auto; padding: 8px 16px; font-size: 14px;">경기 시작(Start game)
         </button>
@@ -213,18 +213,18 @@
                     </label>
                 </div>
                 <div class="setting-item">
+                    <label for="cameraFacing">카메라(Camera)</label>
+                    <select id="cameraFacing" class="text-input-modern">
+                        <option value="user">전면(Front)</option>
+                        <option value="environment">후면(Rear)</option>
+                    </select>
+                </div>
+                <div class="setting-item">
                     <label for="recordQuality">화질(Quality)</label>
                     <select id="recordQuality" class="text-input-modern">
                         <option value="medium">중간(Middle)</option>
                         <option value="low">낮음(Low)</option>
                         <option value="high">높음(High)</option>
-                    </select>
-                </div>
-                <div class="setting-item">
-                    <label for="cameraFacing">카메라(Camera)</label>
-                    <select id="cameraFacing" class="text-input-modern">
-                        <option value="user">전면(Front)</option>
-                        <option value="environment">후면(Rear)</option>
                     </select>
                 </div>
             </div>
