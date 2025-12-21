@@ -1025,7 +1025,7 @@ function startRecording()
         };
 
         mediaRecorder.onstop = () => {
-           console.log("Recording stopped. Showing review modal.");
+        //    console.log("Recording stopped. Showing review modal.");
              if (recordedChunks.length === 0) {
                  console.warn("No data recorded.");
                  return; // 녹화된 데이터가 없으면 미리보기 모달을 띄우지 않음
@@ -1050,9 +1050,9 @@ function startRecording()
                  dl.download = `test_record_${Date.now()}.${ext}`;
                  dl.style.display = 'block';
                  dl.textContent = `녹화 파일 다운로드 (${dl.download})`;
-                 console.log("textContent set for download link:", dl.href);
+                console.log("onstop set for download ");
              }
-             console.log('textContent: recordedChunks len.', recordedChunks.length);
+             console.log('onstop textContent: recordedChunks len.', recordedChunks.length);
              const chkPlayback = document.getElementById('chkPlayback');
              if (chkPlayback) chkPlayback.checked = true;
         };
@@ -1159,7 +1159,7 @@ window.onVideoSaved = (gameId, videoUri) => {
     if (recordIndex > -1) {
         gameHistory[recordIndex].videoUrl = videoUri;
         saveHistory();
-        console.log(`Video URL ${videoUri} saved for game ${gameId}`);
+        console.log(`onVideoSaved saved for game ${gameId}`);
     }
 };
 // '저장' 버튼 클릭 시 최종적으로 호출될 함수
@@ -1228,7 +1228,7 @@ function saveReviewedVideo()
                     dl.textContent = '다운로드(Download)';
                     dl.target = '_blank';
                     logTest && typeof logTest === 'function' && logTest('다운로드 버튼이 준비되었습니다. 곧 자동으로 다운로드가 시작됩니다.');
-                    console.log('Explicit download link created:', dl.href);
+                    console.log('onloadend Explicit download link created');
                     // 자동으로 다운로드 트리거하고 모달 닫기 (사용자 클릭 흐름 내에서 안전)
                     try {
                         dl.click();
@@ -1251,7 +1251,7 @@ function saveReviewedVideo()
                         dlTest.style.display = 'block';
                         dlTest.textContent = `다운로드 파일: ${dlTest.download}`;
                         logTest && typeof logTest === 'function' && logTest('테스트 패널에 다운로드 링크가 생성되었습니다. 곧 자동 다운로드가 시도됩니다.');
-                        console.log('Download link created in test panel:', dlTest.href);
+                        console.log('onloadend Download link created ');
                         try {
                             dlTest.click();
                             // keep fileUrl for history playback; do not revoke
@@ -1664,7 +1664,7 @@ function renderHistoryList()
             });
             setsHtml += '</div>';
         }
-        // console.log('Rendering history record:', record);
+        // console.log('renderHistoryList Rendering history finish');
         item.innerHTML = `
             <div class="history-item-header">
                 <strong>${gameTitle}</strong>
