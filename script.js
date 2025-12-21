@@ -794,6 +794,8 @@ async function startGame() {
     gameState.setScores = [];
     applyPlayerNames();
     gameState.isRecording = document.getElementById('enableRecording').checked;
+    // whether to capture audio along with video (user-configurable)
+    gameState.recordWithAudio = !!document.getElementById('includeAudio')?.checked;
     document.getElementById('recordStopButton').style.display = gameState.isRecording ? 'flex' : 'none';
     if (gameState.isRecording) {
         facingMode = document.getElementById('cameraFacing').value;
@@ -956,9 +958,10 @@ async function startCamera(isForRecording = false) {
 //        if (currentStream) stopCamera();
 
     try {
-        console.log("Requesting camera with facing mode:", facingMode, "isForRecording:", isForRecording);
-        // 녹화용이면 오디오도 요청
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facingMode } }, audio: Boolean(isForRecording) });
+        console.log("Requesting camera with facing mode:", facingMode, "isForRecording:", isForRecording, "recordWithAudio:", gameState.recordWithAudio);
+        // 녹화용이면 사용자가 선택한 경우에만 오디오를 요청
+        const wantAudio = Boolean(isForRecording && gameState.recordWithAudio);
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facingMode } }, audio: wantAudio });
         currentStream = stream;
     } catch (err) {
         console.error("Could not get audio/video stream:", err);
@@ -975,7 +978,7 @@ async function startCamera(isForRecording = false) {
 
     // 스트림을 성공적으로 가져온 후, isForRecording 값에 따라 분기
     if (isForRecording) {
-        startRecording(); // 녹화 시작
+        startRecording(); // 녹화 시작 (only if stream available)
     } else {
         // 카메라 프리뷰 표시
         const camView = document.getElementById('cameraView');
@@ -1008,6 +1011,7 @@ function startRecording()
 
     // 선택 가능한 mimeType을 우선 탐색
     const supportedMime = getSupportedMimeType();
+    console.log('Selected mimeType for MediaRecorder:', supportedMime);
     const options = {
         ...(supportedMime ? { mimeType: supportedMime } : {}),
         videoBitsPerSecond: bitsPerSecond
@@ -1016,6 +1020,11 @@ function startRecording()
     recordedChunks = [];
 
     try {
+        if (!window.MediaRecorder) {
+            alert('현재 브라우저는 MediaRecorder를 지원하지 않습니다. iOS의 경우 iOS15+ Safari를 사용하세요.');
+            console.error('MediaRecorder not supported in this browser.');
+            return;
+        }
         mediaRecorder = new MediaRecorder(currentStream, options); // 수정된 options 객체 사용
 
         mediaRecorder.ondataavailable = event => {
@@ -1057,7 +1066,8 @@ function startRecording()
              if (chkPlayback) chkPlayback.checked = true;
         };
 
-        mediaRecorder.start();
+        // start with small timeslice to encourage dataavailable events on some browsers
+        try { mediaRecorder.start(1000); } catch (e) { mediaRecorder.start(); }
         console.log("Recording started with quality:", quality, `(${bitsPerSecond} bps)`);
 
     } catch (e) {
@@ -1069,7 +1079,10 @@ function startRecording()
 // --- MediaRecorder / platform helpers ---
 function getSupportedMimeType() {
     if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) return '';
+    // Try several candidates, including MP4 with common codecs (iOS Safari prefers MP4/AVC+AAC)
     const candidates = [
+        'video/mp4;codecs="avc1.42E01E, mp4a.40.2"',
+        'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
         'video/mp4',
         'video/webm;codecs=vp9',
         'video/webm;codecs=vp8',
@@ -1196,14 +1209,27 @@ function saveReviewedVideo()
             // Use data URL (reader.result) so it can be stored in localStorage and played back later
             const dataUrl = reader.result; // full data URI like data:video/webm;base64,....
 
-            // 1) gameHistory에 data URL 저장
+            // 1) gameHistory에 data URL 저장 (단, 크기가 너무 크면 저장하지 않음)
             try {
                 const idx = gameHistory.findIndex(r => r.id && r.id.toString() === (gameState.currentGameId || '').toString());
                 if (idx > -1) {
-                    gameHistory[idx].videoUrl = dataUrl;
-                    saveHistory();
-                    logTest && typeof logTest === 'function' && logTest('게임 기록에 비디오 데이터 저장됨: ' + gameState.currentGameId);
-                    console.log(`Video data URL saved in gameHistory for game ID ${gameState.currentGameId}`);
+                    // estimate bytes from base64 length
+                    const base64Part = (typeof dataUrl === 'string' && dataUrl.indexOf(',') > -1) ? dataUrl.split(',')[1] : '';
+                    const estimatedBytes = Math.ceil((base64Part.length * 3) / 4);
+                    const quotaSafeLimit = 2_500_000; // ~2.5 MB - conservative for localStorage
+                    if (estimatedBytes > quotaSafeLimit) {
+                        // avoid storing large video data in localStorage; prompt user to download
+                        gameHistory[idx].videoUrl = null;
+                        saveHistory();
+                        logTest && typeof logTest === 'function' && logTest('비디오 데이터가 너무 커서 로컬에 저장되지 않았습니다. 다운로드 파일을 확인하세요.');
+                        alert('비디오 파일이 너무 커서 로컬 저장이 불가능합니다. 다운로드 파일을 확인하세요.');
+                        console.warn('Video data too large for localStorage; skipped storing videoUrl.');
+                    } else {
+                        gameHistory[idx].videoUrl = dataUrl;
+                        saveHistory();
+                        logTest && typeof logTest === 'function' && logTest('게임 기록에 비디오 데이터 저장됨: ' + gameState.currentGameId);
+                        console.log(`Video data URL saved in gameHistory for game ID ${gameState.currentGameId}`);
+                    }
                 }
             } catch (e) {
                 console.error('gameHistory 저장 실패:', e);
@@ -1211,7 +1237,7 @@ function saveReviewedVideo()
 
             // 2) 명시적 다운로드 버튼 생성 (사용자가 클릭해야 함)
             try {
-                const controls = document.querySelector('#videoReviewModal .video-controls');
+                const controls = document.querySelector('#endGameVideoModal .video-controls') || document.querySelector('#videoReviewModal .video-controls');
                 if (controls) {
                     let dl = document.getElementById('explicitDownloadLink');
                     if (!dl) {
