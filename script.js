@@ -661,8 +661,8 @@ function showEndScreen(winner) {
                 if (endModal) {
                     endModal.classList.add('active');
                 } else {
-                    const reviewModal = document.getElementById('videoReviewModal');
-                    if (reviewModal) reviewModal.classList.add('active');
+                    // const reviewModal = document.getElementById('videoReviewModal');
+                    // if (reviewModal) reviewModal.classList.add('active');
                 }
                 logTest && typeof logTest === 'function' && logTest('게임 종료: 녹화된 영상이 있으므로 저장/미리보기를 표시합니다.');
                 console.log('showEndScreen: end-game preview modal available.');
@@ -879,6 +879,10 @@ function showGameSelection()
     if (timeUpdateInterval) clearInterval(timeUpdateInterval);
     gameState.isRecording = false;
     document.getElementById('recordStopButton').style.display = 'none';
+    // Close any active video modals and clear transient recording state so review modal won't reappear
+    try { closeActiveVideoModal(); } catch (e) { /* ignore if not defined */ }
+    // clear last recorded blob/url to avoid resurrecting stale object URLs
+    try { gameState.lastRecordedBlob = null; gameState.lastRecordedUrl = null; gameState.hasRecordedBlob = false; } catch (e) {}
     stopCamera(); showScreen('gameSelection');
 }
 
@@ -1038,11 +1042,18 @@ function startRecording()
         };
 
         mediaRecorder.onstop = () => {
-        //    console.log("Recording stopped. Showing review modal.");
-             if (recordedChunks.length === 0) {
-                 console.warn("No data recorded.");
-                 return; // 녹화된 데이터가 없으면 미리보기 모달을 띄우지 않음
-             }
+            // If suppression flag is set, skip showing UI (used when we stop recorder during cleanup/save)
+            if (gameState._suppressOnStopUI) {
+                console.log('mediaRecorder.onstop suppressed');
+                gameState._suppressOnStopUI = false;
+                recordedChunks = [];
+                return;
+            }
+            //    console.log("Recording stopped. Showing review modal.");
+            if (recordedChunks.length === 0) {
+                console.warn("No data recorded.");
+                return; // 녹화된 데이터가 없으면 미리보기 모달을 띄우지 않음
+            }
              const blobType = recordedChunks[0]?.type || 'video/webm';
                          const blob = new Blob(recordedChunks, { type: blobType });
                          const videoUrl = URL.createObjectURL(blob);
@@ -1179,6 +1190,20 @@ window.onVideoSaved = (gameId, videoUri) => {
         console.log(`onVideoSaved saved for game ${gameId}`);
     }
 };
+// Cleanup helper to stop media recorder safely and clear transient recording state
+function cleanupAfterSave() {
+    try {
+        if (mediaRecorder) {
+            // suppress UI during stop
+            gameState._suppressOnStopUI = true;
+            try { mediaRecorder.ondataavailable = null; } catch(e){}
+            try { if (mediaRecorder.state !== 'inactive') mediaRecorder.stop(); } catch(e){}
+            mediaRecorder = null;
+        }
+    } catch (e) { console.error('cleanupAfterSave mediaRecorder stop failed', e); }
+    try { recordedChunks = []; } catch(e){}
+    try { gameState.lastRecordedBlob = null; gameState.lastRecordedUrl = null; gameState.hasRecordedBlob = false; } catch(e){}
+}
 // '저장' 버튼 클릭 시 최종적으로 호출될 함수
 function saveReviewedVideo()
 {
@@ -1207,7 +1232,10 @@ function saveReviewedVideo()
         if (window.AndroidInterface?.saveVideo)
         {
             window.AndroidInterface.saveVideo(base64data, gameState.currentGameId.toString());
-            // close modal after handing off to native
+            // native save handled by Android; cleanup and close modal
+            cleanupAfterSave();
+            closeActiveVideoModal();
+            return;
         } else {
             // console.error("Android interface not found for saving video. Creating explicit download link and persisting data URL to history.");
             // Use data URL (reader.result) so it can be stored in localStorage and played back later
@@ -1266,7 +1294,8 @@ function saveReviewedVideo()
                         setTimeout(() => {
                             if (dl && dl.parentNode) dl.parentNode.removeChild(dl);
                         }, 1000);
-                        // close modal and reset data
+                        // cleanup recorder state and close modal
+                        cleanupAfterSave();
                         closeActiveVideoModal();
                     } catch (e) {
                         console.error('자동 다운로드 실패:', e);
@@ -1282,13 +1311,14 @@ function saveReviewedVideo()
                         dlTest.textContent = `다운로드 파일: ${dlTest.download}`;
                         logTest && typeof logTest === 'function' && logTest('테스트 패널에 다운로드 링크가 생성되었습니다. 곧 자동 다운로드가 시도됩니다.');
                         console.log('onloadend Download link created ');
-                        try {
-                            dlTest.click();
-                            // keep fileUrl for history playback; do not revoke
-                            closeActiveVideoModal();
-                        } catch (e) {
-                            console.error('테스트 패널 자동 다운로드 실패:', e);
-                        }
+                            try {
+                                dlTest.click();
+                                // keep fileUrl for history playback; do not revoke
+                                cleanupAfterSave();
+                                closeActiveVideoModal();
+                            } catch (e) {
+                                console.error('테스트 패널 자동 다운로드 실패:', e);
+                            }
                     }
                 }
             } catch (e) {
@@ -1300,6 +1330,7 @@ function saveReviewedVideo()
         }
 
             // 6. 저장 요청 후, 모달을 닫고 데이터를 초기화
+        cleanupAfterSave();
         closeActiveVideoModal();
     };
 
