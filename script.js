@@ -291,6 +291,7 @@ function renderPlayerList() {
                     </p>
                 </div>
                 <div class="action-btns">
+                    <button onclick="showPlayerStats('${player.name}')" style="padding: 4px 8px; margin-right:6px;">통계(Stats)</button>
                     <button onclick="deletePlayer('${player.name}')" style="padding: 4px 8px; color: red;">삭제</button>
                 </div>
             </div>
@@ -298,7 +299,7 @@ function renderPlayerList() {
         listContainer.appendChild(item);
     });
 
-//    updateTotalSummary(); // 전체 요약 갱신
+   updateTotalSummary(); // 전체 요약 갱신
 }
 /**
  * 선수 관리 상단의 요약 정보를 '총 경기 수'와 '등록된 선수 수' 위주로 간결하게 표시합니다.
@@ -336,6 +337,71 @@ function updateTotalSummary() {
             </div>
         </div>
     `;
+}
+
+// --- Player statistics rendering ---
+let _playerScoreChart = null;
+let _playerWinChart = null;
+
+function closePlayerStats() {
+    const modal = document.getElementById('playerStatsModal');
+    if (modal) modal.classList.remove('active');
+    try { if (_playerScoreChart) { _playerScoreChart.destroy(); _playerScoreChart = null; } } catch(e){}
+    try { if (_playerWinChart) { _playerWinChart.destroy(); _playerWinChart = null; } } catch(e){}
+}
+
+function showPlayerStats(playerName) {
+    // gather matches involving this player
+    const matches = gameHistory.filter(r => r.player1Name === playerName || r.player2Name === playerName).slice().sort((a,b)=> new Date(a.date) - new Date(b.date));
+    const labels = [];
+    const playerSets = [];
+    const opponentSets = [];
+    let wins = 0, losses = 0;
+    matches.forEach(m => {
+        const d = new Date(m.date);
+        labels.push(d.toLocaleDateString());
+        const isP1 = m.player1Name === playerName;
+        const pSets = isP1 ? m.player1Sets : m.player2Sets;
+        const oSets = isP1 ? m.player2Sets : m.player1Sets;
+        playerSets.push(pSets);
+        opponentSets.push(oSets);
+        if (pSets > oSets) wins++; else losses++;
+    });
+
+    document.getElementById('playerStatsHeader').textContent = `${playerName} — ${matches.length}경기 (${wins}승 ${losses}패)`;
+    document.getElementById('playerStatsSummary').textContent = matches.length ? `최근 경기: ${labels[labels.length-1]} | 승률: ${((wins/(wins+losses||1))*100).toFixed(1)}%` : '기록이 없습니다.';
+
+    // create score chart (stacked bar of player vs opponent sets)
+    const ctx = document.getElementById('playerScoreChart').getContext('2d');
+    if (_playerScoreChart) _playerScoreChart.destroy();
+    _playerScoreChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: playerName, data: playerSets, backgroundColor: 'rgba(54,162,235,0.8)' },
+                { label: 'Opponent', data: opponentSets, backgroundColor: 'rgba(255,99,132,0.8)' }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'top' } },
+            scales: { x: { stacked: false }, y: { beginAtZero: true, stacked: false } }
+        }
+    });
+
+    // create win/loss pie chart
+    const ctx2 = document.getElementById('playerWinChart').getContext('2d');
+    if (_playerWinChart) _playerWinChart.destroy();
+    _playerWinChart = new Chart(ctx2, {
+        type: 'pie',
+        data: { labels: ['Wins','Losses'], datasets: [{ data: [wins, losses], backgroundColor: ['#4caf50','#f44336'] }] },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+
+    // show modal
+    const modal = document.getElementById('playerStatsModal');
+    if (modal) modal.classList.add('active');
 }
 /**
  * 모든 선수의 전적을 합산하여 상단 요약 바에 표시합니다.
