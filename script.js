@@ -433,7 +433,7 @@ function showPlayerStats(playerName) {
     if (_playerWinChart) _playerWinChart.destroy();
 
     // Gather per-sport stats (games played and win rate)
-    const sportKeys = Object.keys(sportPresets);
+    sportKeys = Object.keys(sportPresets);
     const labelsRadar = sportKeys.map(k => (gameRules[k] && gameRules[k].title) ? gameRules[k].title.replace(' 규칙','') : k);
     const gamesCounts = sportKeys.map(k => {
         return gameHistory.filter(r => r.game === k && (r.player1Name === playerName || r.player2Name === playerName)).length;
