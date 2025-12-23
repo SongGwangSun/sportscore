@@ -371,22 +371,60 @@ function showPlayerStats(playerName) {
     document.getElementById('playerStatsHeader').textContent = `${playerName} — ${matches.length}경기 (${wins}승 ${losses}패)`;
     document.getElementById('playerStatsSummary').textContent = matches.length ? `최근 경기: ${labels[labels.length-1]} | 승률: ${((wins/(wins+losses||1))*100).toFixed(1)}%` : '기록이 없습니다.';
 
-    // create score chart (stacked bar of player vs opponent sets)
+    // create horizontal stacked bar per-sport showing Wins (green) vs Losses (gray)
     const ctx = document.getElementById('playerScoreChart').getContext('2d');
     if (_playerScoreChart) _playerScoreChart.destroy();
+
+    // Prepare per-sport aggregates (wins / losses)
+    const sportKeys = Object.keys(sportPresets);
+    const sportLabels = sportKeys.map(k => (gameRules[k] && gameRules[k].title) ? gameRules[k].title.replace(' 규칙','') : k);
+    const winsCounts = sportKeys.map(k => {
+        const matches = gameHistory.filter(r => r.game === k && (r.player1Name === playerName || r.player2Name === playerName));
+        let w = 0;
+        matches.forEach(m => {
+            const isP1 = m.player1Name === playerName;
+            const pSets = isP1 ? m.player1Sets : m.player2Sets;
+            const oSets = isP1 ? m.player2Sets : m.player1Sets;
+            if (pSets > oSets) w++;
+        });
+        return w;
+    });
+    const lossesCounts = sportKeys.map((k, idx) => {
+        const total = gameHistory.filter(r => r.game === k && (r.player1Name === playerName || r.player2Name === playerName)).length;
+        return Math.max(0, total - (winsCounts[idx] || 0));
+    });
+
     _playerScoreChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: labels,
+            labels: sportLabels,
             datasets: [
-                { label: playerName, data: playerSets, backgroundColor: 'rgba(54,162,235,0.8)' },
-                { label: 'Opponent', data: opponentSets, backgroundColor: 'rgba(255,99,132,0.8)' }
+                { label: 'Wins', data: winsCounts, backgroundColor: '#4caf50' },
+                { label: 'Losses', data: lossesCounts, backgroundColor: '#9e9e9e' }
             ]
         },
         options: {
+            indexAxis: 'y',
             responsive: true,
-            plugins: { legend: { position: 'top' } },
-            scales: { x: { stacked: false }, y: { beginAtZero: true, stacked: false } }
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const idx = context.dataIndex;
+                            const wins = winsCounts[idx] || 0;
+                            const losses = lossesCounts[idx] || 0;
+                            const total = wins + losses;
+                            const pct = total ? Math.round((wins / total) * 100) : 0;
+                            return `${context.dataset.label}: ${context.parsed.x ?? context.parsed} (${total}경기, 승률 ${pct}%)`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: { stacked: true, beginAtZero: true },
+                y: { stacked: true }
+            }
         }
     });
 
