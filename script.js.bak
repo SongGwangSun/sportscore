@@ -1036,7 +1036,7 @@ function checkAutoCourtChange() {
     if (gameState.selectedGame === 'jokgu') {
         if (gameState.player1Score === 8 || gameState.player2Score === 8) needsChange = true;
     }
-    if (isFinalSet) {
+    else if (isFinalSet) {
         if (gameState.player1Score === halfwayPoint || gameState.player2Score === halfwayPoint) needsChange = true;
     }
     if (needsChange) {
