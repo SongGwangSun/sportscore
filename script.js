@@ -3,48 +3,48 @@
  */
 
 // In-page console logger (buffers logs until DOM is ready, then shows a textarea)
-(function(){
+(function () {
     const origLog = console.log.bind(console);
     const origWarn = console.warn.bind(console);
     const origError = console.error.bind(console);
     const buf = [];
 
-    
-    function formatArgs(args){
+
+    function formatArgs(args) {
         return args.map(a => {
-            try { return (typeof a === 'object') ? JSON.stringify(a) : String(a); } catch(e){ return String(a); }
+            try { return (typeof a === 'object') ? JSON.stringify(a) : String(a); } catch (e) { return String(a); }
         }).join(' ');
     }
 
-    console.log = function(...args){
+    console.log = function (...args) {
         const text = formatArgs(args);
-        buf.push({type:'log', text});
+        buf.push({ type: 'log', text });
         try {
             const ta = document.getElementById('inpageConsole');
             if (ta) { ta.value += `[${new Date().toLocaleTimeString()}] LOG: ${text}\n`; ta.scrollTop = ta.scrollHeight; }
-        } catch(e){}
+        } catch (e) { }
         origLog(...args);
     };
-    console.warn = function(...args){
+    console.warn = function (...args) {
         const text = formatArgs(args);
-        buf.push({type:'warn', text});
+        buf.push({ type: 'warn', text });
         try {
             const ta = document.getElementById('inpageConsole');
             if (ta) { ta.value += `[${new Date().toLocaleTimeString()}] WARN: ${text}\n`; ta.scrollTop = ta.scrollHeight; }
-        } catch(e){}
+        } catch (e) { }
         origWarn(...args);
     };
-    console.error = function(...args){
+    console.error = function (...args) {
         const text = formatArgs(args);
-        buf.push({type:'error', text});
+        buf.push({ type: 'error', text });
         try {
             const ta = document.getElementById('inpageConsole');
             if (ta) { ta.value += `[${new Date().toLocaleTimeString()}] ERROR: ${text}\n`; ta.scrollTop = ta.scrollHeight; }
-        } catch(e){}
+        } catch (e) { }
         origError(...args);
     };
 
-    function createConsoleUI(){
+    function createConsoleUI() {
         // if (document.getElementById('inpageConsole')) return;
         const wrapper = document.createElement('div');
         wrapper.id = 'inpageConsoleWrapper';
@@ -62,7 +62,7 @@
         const ta = document.createElement('textarea');
         ta.id = 'inpageConsole';
         ta.readOnly = true;
-        
+
 
         ta.style.cssText = 'width:320px;height:140px;resize:vertical;background:#111;color:#0f0;padding:8px;font-size:12px;border-radius:6px;opacity:0.95;border:1px solid #333;display:none;';
 
@@ -83,13 +83,13 @@
         }
         ta.scrollTop = ta.scrollHeight;
         // expose a helper to log into this UI directly
-        window.__inpageConsole = { el: ta, write: (s)=>{ ta.value += s + '\n'; ta.scrollTop = ta.scrollHeight; } };
+        window.__inpageConsole = { el: ta, write: (s) => { ta.value += s + '\n'; ta.scrollTop = ta.scrollHeight; } };
     }
 
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        try { createConsoleUI(); } catch(e){}
+        try { createConsoleUI(); } catch (e) { }
     } else {
-        document.addEventListener('DOMContentLoaded', () => { try { createConsoleUI(); } catch(e){} });
+        document.addEventListener('DOMContentLoaded', () => { try { createConsoleUI(); } catch (e) { } });
     }
 })();
 
@@ -148,19 +148,19 @@ const sportPresets = {
     pickleball: 11
 };
 // --- 안드로이드로부터 호출될 전역 함수 정의 ---
-window.onVoiceReady = function() {
+window.onVoiceReady = function () {
     console.log("Voice recognizer is ready.");
     // 필요하다면, '준비 완료' UI 피드백을 줄 수 있음
 };
 
-window.onPartialVoiceResult = function(text) {
+window.onPartialVoiceResult = function (text) {
     // 음성인식 설정 화면에서 실시간으로 인식되는 단어 보여주기
     if (document.getElementById('voiceSettings').classList.contains('active')) {
         document.getElementById('recognizedWord').textContent = text;
     }
 };
 
-window.onVoiceResult = function(text) {
+window.onVoiceResult = function (text) {
     console.log("Final voice result:", text);
     const voiceTestBtn = document.getElementById('voiceTestBtn');
     const recognizedWordSpan = document.getElementById('recognizedWord');
@@ -170,7 +170,7 @@ window.onVoiceResult = function(text) {
         if (text.includes("원포인트") || text.includes("투포인트") || text.includes("1.") || text.includes("2.") || text.includes("1 포인트") || text.includes("2 포인트")) {
             recognizedWordSpan.textContent = text + " : OK";
             recognizedWordSpan.style.color = "green";
-        }else{
+        } else {
             recognizedWordSpan.style.color = "red";
             recognizedWordSpan.textContent = text;
         }
@@ -184,11 +184,11 @@ window.onVoiceResult = function(text) {
         if (text.includes("원포인트") || text.includes("원 포인트") || text.includes("1.") || text.includes("1 포인트")) {
             handleRallyWonBy(1);
             // TTS로 피드백 (선택사항)
-//            if (gameState.useSTT) speakScore();
+            //            if (gameState.useSTT) speakScore();
         } else if (text.includes("투포인트") || text.includes("두포인트") || text.includes("두 포인트") || text.includes("투 포인트") || text.includes("2.") || text.includes("2 포인트")) {
             handleRallyWonBy(2);
             // TTS로 피드백 (선택사항)
-//            if (gameState.useSTT) speakScore();
+            //            if (gameState.useSTT) speakScore();
         }
         // 점수 처리 후 다시 음성인식 시작
         if (isVoiceListening && window.AndroidInterface?.startVoiceRecognition) {
@@ -197,16 +197,16 @@ window.onVoiceResult = function(text) {
     }
 };
 
-window.onVoiceError = function(error) {
+window.onVoiceError = function (error) {
     console.error("Voice recognition error:", error);
     const voiceTestBtn = document.getElementById('voiceTestBtn');
     if (voiceTestBtn) {
         voiceTestBtn.classList.remove('listening');
         voiceTestBtn.disabled = false;
         isVoiceListening = false;
-    // UI 업데이트
+        // UI 업데이트
         const voiceControlBtn = document.getElementById('voiceControlBtn');
-        if(voiceControlBtn) voiceControlBtn.classList.remove('active');
+        if (voiceControlBtn) voiceControlBtn.classList.remove('active');
     }
     else if (useVoiceRecognition) {
         voiceControlBtn.style.display = 'block';
@@ -262,8 +262,7 @@ function savePlayer() {
 function renderPlayerList() {
     const listContainer = document.getElementById('savedNamesList');
     listContainer.innerHTML = "";
-    if (players.length === 0)
-    {
+    if (players.length === 0) {
         listContainer.innerHTML = '<p>저장된 선수 기록이 없습니다.<br>There are no saved player records</p>';
         return;
     }
@@ -299,7 +298,7 @@ function renderPlayerList() {
         listContainer.appendChild(item);
     });
 
-   updateTotalSummary(); // 전체 요약 갱신
+    updateTotalSummary(); // 전체 요약 갱신
 }
 /**
  * 선수 관리 상단의 요약 정보를 '총 경기 수'와 '등록된 선수 수' 위주로 간결하게 표시합니다.
@@ -346,13 +345,13 @@ let _playerWinChart = null;
 function closePlayerStats() {
     const modal = document.getElementById('playerStatsModal');
     if (modal) modal.classList.remove('active');
-    try { if (_playerScoreChart) { _playerScoreChart.destroy(); _playerScoreChart = null; } } catch(e){}
-    try { if (_playerWinChart) { _playerWinChart.destroy(); _playerWinChart = null; } } catch(e){}
+    try { if (_playerScoreChart) { _playerScoreChart.destroy(); _playerScoreChart = null; } } catch (e) { }
+    try { if (_playerWinChart) { _playerWinChart.destroy(); _playerWinChart = null; } } catch (e) { }
 }
 
 function showPlayerStats(playerName) {
     // gather matches involving this player
-    const matches = gameHistory.filter(r => r.player1Name === playerName || r.player2Name === playerName).slice().sort((a,b)=> new Date(a.date) - new Date(b.date));
+    const matches = gameHistory.filter(r => r.player1Name === playerName || r.player2Name === playerName).slice().sort((a, b) => new Date(a.date) - new Date(b.date));
     const labels = [];
     const playerSets = [];
     const opponentSets = [];
@@ -369,7 +368,7 @@ function showPlayerStats(playerName) {
     });
 
     document.getElementById('playerStatsHeader').textContent = `${playerName} — ${matches.length}경기 (${wins}승 ${losses}패)`;
-    document.getElementById('playerStatsSummary').textContent = matches.length ? `최근 경기: ${labels[labels.length-1]} | 승률: ${((wins/(wins+losses||1))*100).toFixed(1)}%` : '기록이 없습니다.';
+    document.getElementById('playerStatsSummary').textContent = matches.length ? `최근 경기: ${labels[labels.length - 1]} | 승률: ${((wins / (wins + losses || 1)) * 100).toFixed(1)}%` : '기록이 없습니다.';
 
     // create horizontal stacked bar per-date for the recent 30 days, with sport/color-coded win/loss segments
     const ctx = document.getElementById('playerScoreChart').getContext('2d');
@@ -381,13 +380,13 @@ function showPlayerStats(playerName) {
     startDate.setDate(endDate.getDate() - 7);
     const dateKeys = [];
     for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-        dateKeys.push(new Date(d).toISOString().slice(0,10));
+        dateKeys.push(new Date(d).toISOString().slice(0, 10));
     }
     const dateLabels = dateKeys.map(k => k); // use ISO date labels; UI can be adjusted if needed
 
     // sports and colors (sport color used as border; wins are green, losses are gray)
     const sportKeys = Object.keys(sportPresets);
-    const sportLabels = sportKeys.map(k => (gameRules[k] && gameRules[k].title) ? gameRules[k].title.replace(' 규칙','') : k);
+    const sportLabels = sportKeys.map(k => (gameRules[k] && gameRules[k].title) ? gameRules[k].title.replace(' 규칙', '') : k);
     const sportColors = { badminton: '#2e7d32', pingpong: '#ff9800', jokgu: '#1976d2', pickleball: '#8e24aa' };
 
     // initialize per-sport per-date counts
@@ -398,7 +397,7 @@ function showPlayerStats(playerName) {
     // aggregate gameHistory entries that fall within dateKeys
     gameHistory.forEach(m => {
         if (!m || !m.date) return;
-        const key = new Date(m.date).toISOString().slice(0,10);
+        const key = new Date(m.date).toISOString().slice(0, 10);
         const di = dateKeys.indexOf(key);
         if (di === -1) return; // outside range
         if (!(sportKeys.includes(m.game))) return;
@@ -424,17 +423,17 @@ function showPlayerStats(playerName) {
         // track max for scale
         // winsData.forEach(v => { if (v > maxVal) maxVal = v; });
         // lossesData.forEach(v => { if (v > maxVal) maxVal = v; });
-// maxVal 계산 (양수만)
-    [...winsData, ...lossesData].forEach(v => { 
-        if (v > maxVal) maxVal = v; 
-    });
+        // maxVal 계산 (양수만)
+        [...winsData, ...lossesData].forEach(v => {
+            if (v > maxVal) maxVal = v;
+        });
         datasets.push({
             label: `${sportLabels[idx]} (Wins)`,
             data: winsData,
             backgroundColor: colorMap[k]?.win || '#4CAF50',
             borderColor: colorMap[k]?.win || '#4CAF50',
             borderWidth: 1,
-            stack: `win-${k}`
+            stack: `stack-${k}`
         });
 
         datasets.push({
@@ -443,12 +442,12 @@ function showPlayerStats(playerName) {
             backgroundColor: colorMap[k]?.loss || '#9e9e9e',
             borderColor: colorMap[k]?.loss || '#9e9e9e',
             borderWidth: 1,
-            stack: `losses-${k}`
+            stack: `stack-${k}`
         });
     });
 
     // determine symmetric scale limits
-    const suggestedMax = Math.max(1, Math.ceil(maxVal / 1.1) );
+    const suggestedMax = Math.max(1, Math.ceil(maxVal / 1.1));
 
     _playerScoreChart = new Chart(ctx, {
         type: 'bar',
@@ -456,10 +455,10 @@ function showPlayerStats(playerName) {
         options: {
             responsive: true,
             plugins: {
-                legend: {  display: false  },
+                legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        label: function(context) {
+                        label: function (context) {
                             // show absolute value and sport/date
                             // const raw = context.raw ?? context.parsed.y ?? context.parsed;
                             // const val = Math.abs(raw);
@@ -475,7 +474,7 @@ function showPlayerStats(playerName) {
                 y: {
                     stacked: true,
                     beginAtZero: true,
-                max: suggestedMax  // 최대값 제한
+                    max: suggestedMax  // 최대값 제한
                 }
             }
         }
@@ -483,7 +482,7 @@ function showPlayerStats(playerName) {
 
     // render color-key table into playerStatsSummary (append to existing summary text)
     const colorTableRows = sportKeys.map(k => {
-        const lab = (gameRules[k] && gameRules[k].title) ? gameRules[k].title.replace(' 규칙','') : k;
+        const lab = (gameRules[k] && gameRules[k].title) ? gameRules[k].title.replace(' 규칙', '') : k;
         const win = colorMap[k]?.win || '#4CAF50';
         const loss = colorMap[k]?.loss || '#9e9e9e';
         return `<tr><td style="padding:6px 8px">${lab}</td><td style="padding:6px 8px"><span style="display:inline-block;width:18px;height:14px;background:${win};border:1px solid #ccc;margin-right:8px;vertical-align:middle"></span>${win}</td><td style="padding:6px 8px"><span style="display:inline-block;width:18px;height:14px;background:${loss};border:1px solid #ccc;margin-right:8px;vertical-align:middle"></span>${loss}</td></tr>`;
@@ -503,7 +502,7 @@ function showPlayerStats(playerName) {
 
     // Gather per-sport stats (games played and win rate)
     // reuse `sportKeys` declared above for the first chart
-    const labelsRadar = sportKeys.map(k => (gameRules[k] && gameRules[k].title) ? gameRules[k].title.replace(' 규칙','') : k);
+    const labelsRadar = sportKeys.map(k => (gameRules[k] && gameRules[k].title) ? gameRules[k].title.replace(' 규칙', '') : k);
     const gamesCounts = sportKeys.map(k => {
         return gameHistory.filter(r => r.game === k && (r.player1Name === playerName || r.player2Name === playerName)).length;
     });
@@ -539,7 +538,7 @@ function showPlayerStats(playerName) {
                 legend: { position: 'top' },
                 tooltip: {
                     callbacks: {
-                        label: function(context) {
+                        label: function (context) {
                             const idx = context.dataIndex;
                             const val = context.formattedValue;
                             const games = gamesCounts[idx] || 0;
@@ -654,7 +653,7 @@ function editPlayer(name) {
 
 /** 삭제 기능 */
 function deletePlayer(name) {
-    if(confirm(`${name} 선수를 삭제하시겠습니까?`)) {
+    if (confirm(`${name} 선수를 삭제하시겠습니까?`)) {
         players = players.filter(p => p.name !== name);
         updateStorageAndRender();
     }
@@ -734,10 +733,10 @@ function saveBlobToIDB(id, blob) {
             const tx = db.transaction('videos', 'readwrite');
             const store = tx.objectStore('videos');
             const putReq = store.put({ id: String(id), blob: blob, type: blob.type, date: new Date().toISOString() });
-            putReq.onsuccess = () => {};
-            putReq.onerror = () => {};
-            tx.oncomplete = () => { try { db.close(); } catch(e){}; resolve(true); };
-            tx.onabort = tx.onerror = () => { try { db.close(); } catch(e){}; resolve(false); };
+            putReq.onsuccess = () => { };
+            putReq.onerror = () => { };
+            tx.oncomplete = () => { try { db.close(); } catch (e) { }; resolve(true); };
+            tx.onabort = tx.onerror = () => { try { db.close(); } catch (e) { }; resolve(false); };
         } catch (e) { console.error('saveBlobToIDB error', e); resolve(false); }
     });
 }
@@ -751,10 +750,10 @@ function getBlobFromIDB(id) {
             const getReq = store.get(String(id));
             getReq.onsuccess = () => {
                 const rec = getReq.result;
-                try { db.close(); } catch(e){}
+                try { db.close(); } catch (e) { }
                 resolve(rec ? rec.blob : null);
             };
-            getReq.onerror = () => { try { db.close(); } catch(e){}; resolve(null); };
+            getReq.onerror = () => { try { db.close(); } catch (e) { }; resolve(null); };
         } catch (e) { console.error('getBlobFromIDB error', e); resolve(null); }
     });
 }
@@ -766,16 +765,15 @@ function deleteBlobFromIDB(id) {
             const tx = db.transaction('videos', 'readwrite');
             const store = tx.objectStore('videos');
             const delReq = store.delete(String(id));
-            delReq.onsuccess = () => { try { db.close(); } catch(e){}; resolve(true); };
-            delReq.onerror = () => { try { db.close(); } catch(e){}; resolve(false); };
+            delReq.onsuccess = () => { try { db.close(); } catch (e) { }; resolve(true); };
+            delReq.onerror = () => { try { db.close(); } catch (e) { }; resolve(false); };
         } catch (e) { console.error('deleteBlobFromIDB error', e); resolve(false); }
     });
 }
 
 // --- 3. UI & SCREEN MANAGEMENT ---
 function showScreen(screenId) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(screenId)?.classList.add('active'); }
-function displayGameInfo(gameId)
-{
+function displayGameInfo(gameId) {
     if (!gameRules[gameId]) return;
     gameState.selectedGame = gameId;
     localStorage.setItem('lastSelectedGame', gameId);
@@ -786,37 +784,32 @@ function displayGameInfo(gameId)
     document.querySelectorAll('.game-btn').forEach(btn => btn.classList.toggle('selected', btn.getAttribute('onclick').includes(`'${gameId}'`)));
 }
 
-function showGameSettings()
-{
+function showGameSettings() {
     const gameId = gameState.selectedGame;
     const gameTitle = gameRules[gameId]?.title.replace(' 규칙', '') || '게임';
     document.getElementById('selectedGameTitle').textContent = `${gameTitle} 설정`;
     const lastGame = gameHistory[0];
-    if (lastGame)
-    {
+    if (lastGame) {
         document.getElementById('playerReg1').value = lastGame.player1Name;
         document.getElementById('playerReg2').value = lastGame.player2Name;
     }
-    else
-    {
+    else {
         document.getElementById('playerReg1').value = 'Player 1';
         document.getElementById('playerReg2').value = 'Player 2';
     }
 
     updateMatchTypeVisibility(gameId);
-//    updateWinnerScoreSettings(gameId);
+    //    updateWinnerScoreSettings(gameId);
     setSportMode(gameId)
     showScreen('gameSettings');
 }
-function setSportMode(mode)
-{
+function setSportMode(mode) {
     const score = sportPresets[mode];
     if (score) {
         updateWinScore(score);
     }
 }
-function updateWinScore(newScore)
-{
+function updateWinScore(newScore) {
     if (newScore < 1 || newScore > 25) return; // 유효성 검사
 
     const winScoreRange = document.getElementById('winScoreRange');
@@ -827,30 +820,26 @@ function updateWinScore(newScore)
     // 상단 텍스트 변경
     winScoreValue.textContent = newScore;
 }
-function updateWinnerScoreSettings(game)
-{
+function updateWinnerScoreSettings(game) {
     const winScoreRange = document.getElementById('winScoreRange');
     const winScoreValue = document.getElementById('winScoreValue');
-    if('badminton' === game || 'jokgu' === game)
-    {
+    if ('badminton' === game || 'jokgu' === game) {
         winScoreRange.value = 15;
         winScoreValue.textContent = "15";
     }
-    else if('pingpong' === game || 'pickleball' === game)
-    {
+    else if ('pingpong' === game || 'pickleball' === game) {
         winScoreRange.value = 11;
         winScoreValue.textContent = "11";
     }
 }
-function updateScoreboard() 
-{ 
-    document.getElementById('score1').textContent = gameState.player1Score; 
-    document.getElementById('score2').textContent = gameState.player2Score; 
-    document.getElementById('player1SetsInline').textContent = gameState.player1Sets; 
-    document.getElementById('player2SetsInline').textContent = gameState.player2Sets; 
-    document.querySelector('#player1Score .player-name').textContent = gameState.player1Name; 
-    document.querySelector('#player2Score .player-name').textContent = gameState.player2Name; 
-    updateServeColor(); 
+function updateScoreboard() {
+    document.getElementById('score1').textContent = gameState.player1Score;
+    document.getElementById('score2').textContent = gameState.player2Score;
+    document.getElementById('player1SetsInline').textContent = gameState.player1Sets;
+    document.getElementById('player2SetsInline').textContent = gameState.player2Sets;
+    document.querySelector('#player1Score .player-name').textContent = gameState.player1Name;
+    document.querySelector('#player2Score .player-name').textContent = gameState.player2Name;
+    updateServeColor();
 }
 function updateServeColor() { const s1 = document.getElementById('score1'); const s2 = document.getElementById('score2'); s1.classList.remove('serve'); s2.classList.remove('serve'); if (gameState.currentServer === 1) s1.classList.add('serve'); else s2.classList.add('serve'); }
 
@@ -858,13 +847,11 @@ function showEndScreen(winner) {
     console.log('showEndScreen: start.');
     const gameEndScreen = document.getElementById('gameEnd');
     gameState.setScores.push({ p1: gameState.player1Score, p2: gameState.player2Score });
-    if(winner === 1)
-    {
+    if (winner === 1) {
         recordMatchResult(gameState.player1Name, true)
         recordMatchResult(gameState.player2Name, false)
     }
-    else
-    {
+    else {
         recordMatchResult(gameState.player1Name, false)
         recordMatchResult(gameState.player2Name, true)
     }
@@ -894,8 +881,8 @@ function showEndScreen(winner) {
     saveHistory();
 
     if (timeUpdateInterval) clearInterval(timeUpdateInterval);
-    
-    const victoryImageUrl = `images/win_${gameState.selectedGame}.jpg`; 
+
+    const victoryImageUrl = `images/win_${gameState.selectedGame}.jpg`;
     gameEndScreen.style.backgroundImage = `url('${victoryImageUrl}')`;
     const victorySound = document.getElementById('victorySound');
     if (victorySound && !victorySound.src) {
@@ -936,7 +923,7 @@ function showEndScreen(winner) {
             }
             // Note: do NOT accept stored blob: URLs from previous sessions (they may be revoked/invalid)
             // This prevents blob:null/... errors when assigning to <video>.src
-            
+
             if (videoUrl) {
                 // use dedicated end-of-game modal so Save/Cancel are available
                 const reviewEl = document.getElementById('endGameReviewVideo') || document.getElementById('reviewVideo');
@@ -962,56 +949,53 @@ function showEndScreen(winner) {
 }
 
 function triggerConfetti() { const canvas = document.getElementById('confettiCanvas'); const myConfetti = confetti.create(canvas, { resize: true }); myConfetti({ particleCount: 150, spread: 180, origin: { y: 0.6 } }); }
-function updateMatchTypeVisibility(game)
-{
+function updateMatchTypeVisibility(game) {
     document.getElementById('matchTypeGroup').style.display = ('pingpong' === game || 'badminton' === game || 'pickleball' === game) ? 'flex' : 'none';
 }
 function updateTimeDisplays() { const now = new Date(); document.getElementById('currentTimeDisplay').textContent = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`; if (gameState.gameStartTime) { const elapsed = Math.floor((Date.now() - gameState.gameStartTime) / 1000); const h = String(Math.floor(elapsed / 3600)).padStart(2, '0'); const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0'); const s = String(elapsed % 60).padStart(2, '0'); document.getElementById('elapsedTimeDisplay').textContent = `${h}:${m}:${s}`; } }
 
 // --- 4. CORE GAME LOGIC ---
-function handleRallyWonBy(player)
-{
+function handleRallyWonBy(player) {
     if (player === 1) gameState.player1Score++; else gameState.player2Score++;
     gameState.scoreHistory.push({ p1: gameState.player1Score, p2: gameState.player2Score, server: gameState.currentServer });
     const oldServer = gameState.currentServer;
     const totalScore = gameState.player1Score + gameState.player2Score;
     const deucePoint = gameState.winScore - 1;
     switch (gameState.selectedGame) {
-    case 'pingpong':
-        if(gameState.matchType === 'doubles')
-        {
-            if (totalScore % 5 === 0 && totalScore > 0) {
-                gameState.currentServer = oldServer === 1 ? 2 : 1; }
-        }
-        else
-        {
-            if (totalScore % 2 === 0 && totalScore > 0) {
-                gameState.currentServer = oldServer === 1 ? 2 : 1; }
-        }
-        if (gameState.player1Score >= deucePoint && gameState.player2Score >= deucePoint) {
-                gameState.currentServer = oldServer === 1 ? 2 : 1;
-        }
-        break;
-    case 'pickleball':
-        if(gameState.matchType !== 'single')
-        {
-            if(player !== gameState.currentServer)
-            {
-                if (ServerCount == 1) ServerCount = 2;
-                else if (ServerCount == 2) {
-                    ServerCount = 1;
-                    gameState.currentServer = oldServer === 1 ? 2 : 1; }
+        case 'pingpong':
+            if (gameState.matchType === 'doubles') {
+                if (totalScore % 5 === 0 && totalScore > 0) {
+                    gameState.currentServer = oldServer === 1 ? 2 : 1;
+                }
             }
-        }
-        else
-            gameState.currentServer = player;
-        if (gameState.player1Score >= deucePoint && gameState.player2Score >= deucePoint) {
+            else {
+                if (totalScore % 2 === 0 && totalScore > 0) {
+                    gameState.currentServer = oldServer === 1 ? 2 : 1;
+                }
+            }
+            if (gameState.player1Score >= deucePoint && gameState.player2Score >= deucePoint) {
                 gameState.currentServer = oldServer === 1 ? 2 : 1;
-        } 
-        break;
-    default:
-        gameState.currentServer = player;
-        break;
+            }
+            break;
+        case 'pickleball':
+            if (gameState.matchType !== 'single') {
+                if (player !== gameState.currentServer) {
+                    if (ServerCount == 1) ServerCount = 2;
+                    else if (ServerCount == 2) {
+                        ServerCount = 1;
+                        gameState.currentServer = oldServer === 1 ? 2 : 1;
+                    }
+                }
+            }
+            else
+                gameState.currentServer = player;
+            if (gameState.player1Score >= deucePoint && gameState.player2Score >= deucePoint) {
+                gameState.currentServer = oldServer === 1 ? 2 : 1;
+            }
+            break;
+        default:
+            gameState.currentServer = player;
+            break;
     }
     if (oldServer !== gameState.currentServer) {
         notifyServeChange();
@@ -1021,20 +1005,17 @@ function handleRallyWonBy(player)
     checkAutoCourtChange();
     checkSetWin();
 }
-function checkSetWin()
-{
+function checkSetWin() {
     const { player1Score, player2Score, winScore } = gameState;
     let setWinner = null;
     if (player1Score >= winScore && player1Score >= player2Score + 2) setWinner = 1;
     else if (player2Score >= winScore && player2Score >= player1Score + 2) setWinner = 2;
-    if (setWinner)
-    {
+    if (setWinner) {
         gameState.setScores.push({ p1: player1Score, p2: player2Score });
         if (setWinner === 1) gameState.player1Sets++; else gameState.player2Sets++;
         speakNarration(setWinner === 1 ? gameState.player1Name : gameState.player2Name);
         // speakNarration(setWinner === 1 ? 'player1SetWin' : 'player2SetWin');
-        if (!checkGameWin())
-        {
+        if (!checkGameWin()) {
             gameState.currentSet++;
             resetSet();
 
@@ -1047,22 +1028,18 @@ function checkSetWin()
 function checkGameWin() { const setsToWin = Math.ceil(gameState.totalSets / 2); if (gameState.player1Sets >= setsToWin) { showEndScreen(1); return true; } if (gameState.player2Sets >= setsToWin) { showEndScreen(2); return true; } return false; }
 function resetSet() { gameState.player1Score = 0; gameState.player2Score = 0; gameState.scoreHistory = []; gameState.midSetCourtChanged = false; updateScoreboard(); speakNarration('setReset'); }
 function undoLastScore() { if (gameState.scoreHistory.length > 1) { gameState.scoreHistory.pop(); const last = gameState.scoreHistory[gameState.scoreHistory.length - 1]; gameState.player1Score = last.p1; gameState.player2Score = last.p2; gameState.currentServer = last.server; } else { gameState.player1Score = 0; gameState.player2Score = 0; gameState.scoreHistory = []; } updateScoreboard(); speakNarration('undo'); }
-function checkAutoCourtChange()
-{
+function checkAutoCourtChange() {
     const isFinalSet = (gameState.player1Sets + gameState.player2Sets) === (gameState.totalSets - 1);
     const halfwayPoint = Math.ceil(gameState.winScore / 2);
     if (gameState.midSetCourtChanged) return;
     let needsChange = false;
-    if (gameState.selectedGame === 'jokgu')
-    {
+    if (gameState.selectedGame === 'jokgu') {
         if (gameState.player1Score === 8 || gameState.player2Score === 8) needsChange = true;
     }
-    else if (isFinalSet)
-    {
+    else if (isFinalSet) {
         if (gameState.player1Score === halfwayPoint || gameState.player2Score === halfwayPoint) needsChange = true;
     }
-    if (needsChange)
-    {
+    if (needsChange) {
         switchCourt(true);
         notifyCourtChange();
         gameState.midSetCourtChanged = true;
@@ -1080,9 +1057,9 @@ async function startGame() {
     gameState.setScores = [];
     applyPlayerNames();
 
-    if(gameState.player1Name.trim() === '' || gameState.player2Name.trim() === '')
+    if (gameState.player1Name.trim() === '' || gameState.player2Name.trim() === '')
         return alert('선수 이름을 입력하세요. Please enter player names.');
-    if(gameState.player1Name === gameState.player2Name)
+    if (gameState.player1Name === gameState.player2Name)
         return alert('선수 이름이 중복되었습니다. Please enter different player names.');
 
     gameState.isRecording = document.getElementById('enableRecording').checked;
@@ -1103,7 +1080,7 @@ async function startGame() {
         voiceControlBtn.classList.remove('active'); // 초기화
         isVoiceListening = false; // 초기화
 
-       isVoiceListening = !isVoiceListening;
+        isVoiceListening = !isVoiceListening;
         if (isVoiceListening) {
             if (window.AndroidInterface?.startVoiceRecognition) {
                 window.AndroidInterface.startVoiceRecognition();
@@ -1122,7 +1099,7 @@ async function startGame() {
     gameState.currentSet = 1;
     gameState.player1Sets = 0;
     gameState.player2Sets = 0;
-    document.getElementById('gameNameDisplay').textContent = gameRules[gameState.selectedGame].title.replace(' 규칙','');
+    document.getElementById('gameNameDisplay').textContent = gameRules[gameState.selectedGame].title.replace(' 규칙', '');
     gameState.gameStartTime = Date.now();
     if (timeUpdateInterval) clearInterval(timeUpdateInterval);
     timeUpdateInterval = setInterval(updateTimeDisplays, 1000);
@@ -1144,20 +1121,17 @@ function testVoice(text) {
     }
 }
 
-function switchCourt(isAuto = false)
-{
+function switchCourt(isAuto = false) {
     [gameState.player1Score, gameState.player2Score] = [gameState.player2Score, gameState.player1Score];
     [gameState.player1Sets, gameState.player2Sets] = [gameState.player2Sets, gameState.player1Sets];
     [gameState.player1Name, gameState.player2Name] = [gameState.player2Name, gameState.player1Name];
     updateScoreboard();
-    if (!isAuto)
-    {
+    if (!isAuto) {
         gameState.currentServer = gameState.currentServer == 1 ? 2 : 1;
         updateServeColor(); notifyCourtChange(); speakNarration('courtSwap');
     }
 }
-function showGameSelection()
-{
+function showGameSelection() {
     const gameEndScreen = document.getElementById('gameEnd');
     if (gameEndScreen) { gameEndScreen.style.backgroundImage = 'none'; }
     if (timeUpdateInterval) clearInterval(timeUpdateInterval);
@@ -1166,7 +1140,7 @@ function showGameSelection()
     // Close any active video modals and clear transient recording state so review modal won't reappear
     try { closeActiveVideoModal(); } catch (e) { /* ignore if not defined */ }
     // clear last recorded blob/url to avoid resurrecting stale object URLs
-    try { gameState.lastRecordedBlob = null; gameState.lastRecordedUrl = null; gameState.hasRecordedBlob = false; } catch (e) {}
+    try { gameState.lastRecordedBlob = null; gameState.lastRecordedUrl = null; gameState.hasRecordedBlob = false; } catch (e) { }
     stopCamera(); showScreen('gameSelection');
 }
 
@@ -1174,54 +1148,46 @@ function showGameSelection()
 const narrations = { 'ko-KR': { gameStart: "게임 시작", setReset: "세트 리셋", courtSwap: "코트 교체", player1SetWin: "1번 선수 세트", player2SetWin: "2번 선수 세트", undo: "실수 수정", serveChange: "서브 교체", courtChange: "코트 체인지" }, 'en-US': { gameStart: "Game start", setReset: "Set reset", courtSwap: "Switching sides", player1SetWin: "Player 1 wins the set", player2SetWin: "Player 2 wins the set", undo: "Undo", serveChange: "Serve change", courtChange: "Court change" } };
 function populateVoiceList() { const vSelect = document.getElementById('voiceSelect'); if (!vSelect || !window.speechSynthesis) return; voicesList = speechSynthesis.getVoices(); vSelect.innerHTML = ''; const langFilter = document.getElementById('voiceLangSelect').value; voicesList.filter(v => v.lang === langFilter).forEach(v => { const opt = document.createElement('option'); opt.textContent = v.name; opt.value = v.name; vSelect.appendChild(opt); }); vSelect.value = gameState.voiceName; }
 function speakPreview() { speakScore(gameState.selectedLang === 'ko-KR' ? "안녕 스포츠 점수판" : "Hello Sport score", true); }
-function speakScore(text, isPreview = false) 
-{ 
-    if (window.AndroidInterface?.speak && !isPreview) 
-    { 
-        window.AndroidInterface.speak(text); 
-        return; 
-    } 
-    if ('speechSynthesis' in window) 
-    { 
-        speechSynthesis.cancel(); 
-        const utt = new SpeechSynthesisUtterance(text); 
-        utt.lang = gameState.selectedLang; 
-        utt.rate = gameState.rate; 
-        utt.pitch = gameState.pitch; 
-        if (gameState.voiceName) 
-        { 
-            const voice = voicesList.find(v => v.name === gameState.voiceName); 
-            if (voice) utt.voice = voice; 
-        } 
-        speechSynthesis.speak(utt); 
-    } 
+function speakScore(text, isPreview = false) {
+    if (window.AndroidInterface?.speak && !isPreview) {
+        window.AndroidInterface.speak(text);
+        return;
+    }
+    if ('speechSynthesis' in window) {
+        speechSynthesis.cancel();
+        const utt = new SpeechSynthesisUtterance(text);
+        utt.lang = gameState.selectedLang;
+        utt.rate = gameState.rate;
+        utt.pitch = gameState.pitch;
+        if (gameState.voiceName) {
+            const voice = voicesList.find(v => v.name === gameState.voiceName);
+            if (voice) utt.voice = voice;
+        }
+        speechSynthesis.speak(utt);
+    }
 }
 function loadVoices() { if ('speechSynthesis' in window) { speechSynthesis.onvoiceschanged = populateVoiceList; populateVoiceList(); } }
-function speakNarration(key) { 
-    const text = narrations[gameState.selectedLang]?.[key]; 
-    if (text) speakScore(text); 
+function speakNarration(key) {
+    const text = narrations[gameState.selectedLang]?.[key];
+    if (text) speakScore(text);
 }
-function speakCurrentScore() 
-{ 
+function speakCurrentScore() {
     let p1 = gameState.player1Score, p2 = gameState.player2Score;
-    if(gameState.selectedLang === 'ko-KR')
-    {
+    if (gameState.selectedLang === 'ko-KR') {
         let voiceval = koreascoreVoice[p1] + ' 대 ' + koreascoreVoice[p2];
         if (p1 === p2) {
             voiceval = voiceval + ' 동점 ';
-        } 
-        if(gameState.selectedGame == 'pickleball' && gameState.matchType != 'single'){
+        }
+        if (gameState.selectedGame == 'pickleball' && gameState.matchType != 'single') {
             const Serverspeak = ServerCount == 1 ? ' 일' : ' 이';
             voiceval = voiceval + Serverspeak + '번 서브';
         }
         speakScore(voiceval);
     }
-    else
-    {
-        if (gameState.selectedGame == 'pingpong' || gameState.selectedGame == 'badminton') 
-        {
+    else {
+        if (gameState.selectedGame == 'pingpong' || gameState.selectedGame == 'badminton') {
             if (p1 == p2) {
-                if(p1 == 0) speakScore('love all');
+                if (p1 == 0) speakScore('love all');
                 speakScore(`${p1} all`);
             }
             else if (p1 == 0) {
@@ -1232,13 +1198,13 @@ function speakCurrentScore()
             }
         }
         else
-            speakScore(`${gameState.player1Score} , ${gameState.player2Score}`); 
+            speakScore(`${gameState.player1Score} , ${gameState.player2Score}`);
     }
 }
 function toggleCamera() { const camView = document.getElementById('cameraView'); if (camView.style.display === 'block') stopCamera(); else startCamera(); }
 
 async function startCamera(isForRecording = false) {
-   // 이미 스트림이 있으면 아무것도 안 함 (효율성)
+    // 이미 스트림이 있으면 아무것도 안 함 (효율성)
     if (currentStream) {
         if (isForRecording) startRecording(); // 스트림이 이미 있으니 바로 녹화 시작
         return;
@@ -1247,7 +1213,7 @@ async function startCamera(isForRecording = false) {
         alert("카메라를 사용할 수 없는 환경입니다.");
         return;
     }
-//        if (currentStream) stopCamera();
+    //        if (currentStream) stopCamera();
 
     try {
         console.log("Requesting camera with facing mode:", facingMode, "isForRecording:", isForRecording, "recordWithAudio:", gameState.recordWithAudio);
@@ -1284,8 +1250,7 @@ async function startCamera(isForRecording = false) {
 
 function stopCamera() { if (currentStream) { currentStream.getTracks().forEach(track => track.stop()); currentStream = null; } const camView = document.getElementById('cameraView'); if (camView) { camView.srcObject = null; camView.style.display = 'none'; document.getElementById('cameraControls').style.display = 'none'; } }
 function switchCamera() { facingMode = (facingMode === 'user') ? 'environment' : 'user'; startCamera(gameState.isRecording); }
-function startRecording()
-{
+function startRecording() {
     if (!currentStream) {
         console.error("Stream is not available for recording. Attempting to start camera first.");
         // 스트림이 없으면 카메라를 켜고, 켜진 후에 녹화를 시작하도록 요청
@@ -1338,31 +1303,31 @@ function startRecording()
                 console.warn("No data recorded.");
                 return; // 녹화된 데이터가 없으면 미리보기 모달을 띄우지 않음
             }
-             const blobType = recordedChunks[0]?.type || 'video/webm';
-                         const blob = new Blob(recordedChunks, { type: blobType });
-                         const videoUrl = URL.createObjectURL(blob);
-                         // persist the last recorded blob/url so it survives modal close
-                         gameState.lastRecordedBlob = blob;
-                         gameState.lastRecordedUrl = videoUrl;
-                         gameState.hasRecordedBlob = true;
-             // review modal (existing UI)
-             const reviewEl = document.getElementById('reviewVideo');
-             if (reviewEl) reviewEl.src = videoUrl;
-             const reviewModal = document.getElementById('videoReviewModal');
-             if (reviewModal) reviewModal.classList.add('active');
-             // test panel download link
-             const dl = document.getElementById('downloadLinkTest');
-             if (dl) {
-                 dl.href = videoUrl;
-                 const ext = blobType.includes('mp4') ? 'mp4' : 'webm';
-                 dl.download = `test_record_${Date.now()}.${ext}`;
-                 dl.style.display = 'block';
-                 dl.textContent = `녹화 파일 다운로드 (${dl.download})`;
+            const blobType = recordedChunks[0]?.type || 'video/webm';
+            const blob = new Blob(recordedChunks, { type: blobType });
+            const videoUrl = URL.createObjectURL(blob);
+            // persist the last recorded blob/url so it survives modal close
+            gameState.lastRecordedBlob = blob;
+            gameState.lastRecordedUrl = videoUrl;
+            gameState.hasRecordedBlob = true;
+            // review modal (existing UI)
+            const reviewEl = document.getElementById('reviewVideo');
+            if (reviewEl) reviewEl.src = videoUrl;
+            const reviewModal = document.getElementById('videoReviewModal');
+            if (reviewModal) reviewModal.classList.add('active');
+            // test panel download link
+            const dl = document.getElementById('downloadLinkTest');
+            if (dl) {
+                dl.href = videoUrl;
+                const ext = blobType.includes('mp4') ? 'mp4' : 'webm';
+                dl.download = `test_record_${Date.now()}.${ext}`;
+                dl.style.display = 'block';
+                dl.textContent = `녹화 파일 다운로드 (${dl.download})`;
                 console.log("onstop set for download ");
-             }
-             console.log('onstop textContent: recordedChunks len.', recordedChunks.length);
-             const chkPlayback = document.getElementById('chkPlayback');
-             if (chkPlayback) chkPlayback.checked = true;
+            }
+            console.log('onstop textContent: recordedChunks len.', recordedChunks.length);
+            const chkPlayback = document.getElementById('chkPlayback');
+            if (chkPlayback) chkPlayback.checked = true;
         };
 
         // start with small timeslice to encourage dataavailable events on some browsers
@@ -1439,8 +1404,7 @@ function pauseRecordingAndShowReview() {
     }
 }
 
-function closeReviewAndResumeRecording()
-{
+function closeReviewAndResumeRecording() {
     const modal = document.getElementById('videoReviewModal');
     if (modal) modal.classList.remove('active');
     const reviewVideo = document.getElementById('reviewVideo');
@@ -1448,11 +1412,11 @@ function closeReviewAndResumeRecording()
         if (reviewVideo && reviewVideo.src) {
             // Only revoke non-data URLs and only if it's not the persisted lastRecordedUrl
             if (typeof reviewVideo.src === 'string' && reviewVideo.src.startsWith('blob:')) {
-                try { URL.revokeObjectURL(reviewVideo.src); } catch(e){}
+                try { URL.revokeObjectURL(reviewVideo.src); } catch (e) { }
             }
             reviewVideo.src = '';
         }
-    } catch(e) { console.error('closeReviewAndResumeRecording cleanup failed', e); }
+    } catch (e) { console.error('closeReviewAndResumeRecording cleanup failed', e); }
 
     // Resume recording only if we paused it for review (avoid re-requesting camera permissions)
     if (gameState._resumeAfterReview) {
@@ -1480,20 +1444,19 @@ function cleanupAfterSave() {
         if (mediaRecorder) {
             // suppress UI during stop
             gameState._suppressOnStopUI = true;
-            try { mediaRecorder.ondataavailable = null; } catch(e){}
-            try { if (mediaRecorder.state !== 'inactive') mediaRecorder.stop(); } catch(e){}
+            try { mediaRecorder.ondataavailable = null; } catch (e) { }
+            try { if (mediaRecorder.state !== 'inactive') mediaRecorder.stop(); } catch (e) { }
             mediaRecorder = null;
         }
     } catch (e) { console.error('cleanupAfterSave mediaRecorder stop failed', e); }
-    try { recordedChunks = []; } catch(e){}
-    try { gameState.lastRecordedBlob = null; gameState.lastRecordedUrl = null; gameState.hasRecordedBlob = false; } catch(e){}
+    try { recordedChunks = []; } catch (e) { }
+    try { gameState.lastRecordedBlob = null; gameState.lastRecordedUrl = null; gameState.hasRecordedBlob = false; } catch (e) { }
 }
 // '저장' 버튼 클릭 시 최종적으로 호출될 함수
-function saveReviewedVideo()
-{
+function saveReviewedVideo() {
     // 1. 녹화된 데이터가 있는지 확인
     let blob = null;
-        if (recordedChunks && recordedChunks.length > 0) {
+    if (recordedChunks && recordedChunks.length > 0) {
         blob = new Blob(recordedChunks, { type: recordedChunks[0]?.type || 'video/webm' });
     } else if (gameState.lastRecordedBlob) {
         blob = gameState.lastRecordedBlob;
@@ -1507,14 +1470,12 @@ function saveReviewedVideo()
     // 3. Blob을 Base64로 변환
     const reader = new FileReader();
     reader.readAsDataURL(blob);
-    reader.onloadend = () =>
-    {
+    reader.onloadend = () => {
         // 4. 맨 앞의 "data:video/webm;base64," 부분을 제거하고 순수 데이터만 추출
         const base64data = reader.result.split(',')[1];
 
         // 5. 안드로이드 인터페이스 호출 (단 한번만!)
-        if (window.AndroidInterface?.saveVideo)
-        {
+        if (window.AndroidInterface?.saveVideo) {
             window.AndroidInterface.saveVideo(base64data, gameState.currentGameId.toString());
             // native save handled by Android; cleanup and close modal
             cleanupAfterSave();
@@ -1611,14 +1572,14 @@ function saveReviewedVideo()
                         dlTest.textContent = `다운로드 파일: ${dlTest.download}`;
                         logTest && typeof logTest === 'function' && logTest('테스트 패널에 다운로드 링크가 생성되었습니다. 곧 자동 다운로드가 시도됩니다.');
                         console.log('onloadend Download link created ');
-                            try {
-                                dlTest.click();
-                                // keep fileUrl for history playback; do not revoke
-                                cleanupAfterSave();
-                                closeActiveVideoModal();
-                            } catch (e) {
-                                console.error('테스트 패널 자동 다운로드 실패:', e);
-                            }
+                        try {
+                            dlTest.click();
+                            // keep fileUrl for history playback; do not revoke
+                            cleanupAfterSave();
+                            closeActiveVideoModal();
+                        } catch (e) {
+                            console.error('테스트 패널 자동 다운로드 실패:', e);
+                        }
                     }
                 }
             } catch (e) {
@@ -1629,38 +1590,35 @@ function saveReviewedVideo()
             return;
         }
 
-            // 6. 저장 요청 후, 모달을 닫고 데이터를 초기화
+        // 6. 저장 요청 후, 모달을 닫고 데이터를 초기화
         cleanupAfterSave();
         closeActiveVideoModal();
     };
 
-    reader.onerror = () =>
-    {
+    reader.onerror = () => {
         alert("파일을 읽는 데 실패했습니다.");
         closeReviewModal();
     };
 }
 
-function closeReviewModal()
-{
+function closeReviewModal() {
     const modal = document.getElementById('videoReviewModal');
     if (!modal) return;
 
     modal.classList.remove('active');
 
     const reviewVideo = document.getElementById('reviewVideo');
-    if (reviewVideo && reviewVideo.src)
-    {
+    if (reviewVideo && reviewVideo.src) {
         // Do not revoke the object URL if it's persisted in gameState (keep it available for history playback).
         try {
             if (gameState.lastRecordedUrl && reviewVideo.src === gameState.lastRecordedUrl) {
                 // keep the URL for history playback
                 reviewVideo.src = '';
             } else {
-                try { URL.revokeObjectURL(reviewVideo.src); } catch(e){}
+                try { URL.revokeObjectURL(reviewVideo.src); } catch (e) { }
                 reviewVideo.src = '';
             }
-        } catch(e) { reviewVideo.src = ''; }
+        } catch (e) { reviewVideo.src = ''; }
     }
 
     // 전역 변수 초기화
@@ -1673,7 +1631,7 @@ function closeEndGameModal() {
     modal.classList.remove('active');
     const v = document.getElementById('endGameReviewVideo');
     if (v && v.src) {
-        try { URL.revokeObjectURL(v.src); } catch(e) {}
+        try { URL.revokeObjectURL(v.src); } catch (e) { }
         v.src = '';
     }
 }
@@ -1748,7 +1706,7 @@ function closeHistoryVideo() {
     modal.classList.remove('active');
     const v = document.getElementById('historyReviewVideo');
     if (v && v.src) {
-        try { URL.revokeObjectURL(v.src); } catch(e) {}
+        try { URL.revokeObjectURL(v.src); } catch (e) { }
         v.src = '';
     }
 }
@@ -1756,8 +1714,7 @@ function closeHistoryVideo() {
 function toggleGameMenu() { const menu = document.getElementById('gameMenu'); menu.style.display = menu.style.display === 'block' ? 'none' : 'block'; }
 function showAbout() { document.getElementById('aboutModal')?.classList.add('active'); }
 function closeAboutModal() { document.getElementById('aboutModal')?.classList.remove('active'); }
-function showHistory()
-{
+function showHistory() {
     renderHistoryList();
     document.getElementById('historyModal')?.classList.add('active');
 }
@@ -1898,11 +1855,10 @@ function openPlayerNamesPicker(targetInputId) {
         } else {
             playertext = `${player.name} 전적: ${player.wins}승 ${player.losses}패 (승률 ${winRate}%)`;
         }
-        if(playertext.length > 40) {
+        if (playertext.length > 40) {
             playertext = playertext.substring(0, 37) + '...';
         }
-        else
-        {
+        else {
             playertext = playertext.padEnd(40, ' ');
         }
         item.innerHTML = `
@@ -1934,8 +1890,7 @@ function closePlayerNamesPicker() { document.getElementById('playerNamesPickerMo
  * 입력된 선수 이름을 게임 상태에 적용하고,
  * 새로운 이름인 경우 선수 명단(players)에 전적 0승 0패로 자동 등록합니다.
  */
-function applyPlayerNames()
-{
+function applyPlayerNames() {
     const p1Name = document.getElementById('playerReg1').value.trim();
     const p2Name = document.getElementById('playerReg2').value.trim();
 
@@ -1967,32 +1922,26 @@ function applyPlayerNames()
 
 function clearHistory() { if (confirm('모든 기록을 삭제하시겠습니까?\nDo you want to delete all records?')) { gameHistory = []; saveHistory(); renderHistoryList(); } }
 
-function renderHistoryList()
-{
+function renderHistoryList() {
     const listEl = document.getElementById('historyList');
     listEl.innerHTML = '';
-    if (gameHistory.length === 0)
-    {
+    if (gameHistory.length === 0) {
         listEl.innerHTML = '<p>저장된 경기 기록이 없습니다.<br>There are no saved match records</p>';
         return;
     }
-    gameHistory.forEach(record =>
-    {
+    gameHistory.forEach(record => {
         const item = document.createElement('div');
         item.className = 'history-item';
         const gameTitle = gameRules[record.game]?.title.replace(' 규칙', '') || record.game;
         let setsHtml = '';
         let setCount = 0;
-        if(record.winner === record.player1Name) setCount = record.player1Sets;
+        if (record.winner === record.player1Name) setCount = record.player1Sets;
         else setCount = record.player1Sets + record.player2Sets;
-        if (record.setScores && Array.isArray(record.setScores))
-        {
+        if (record.setScores && Array.isArray(record.setScores)) {
             setsHtml = '<div class="set-scores-container">';
-            record.setScores.forEach((set, i) =>
-            {
-                if(setCount > i)
-                {
-                    if(i + 1 === setCount)
+            record.setScores.forEach((set, i) => {
+                if (setCount > i) {
+                    if (i + 1 === setCount)
                         setsHtml += `<span>Set ${i + 1}: ${set.p1} - ${set.p2}  </span>`;
                     else
                         setsHtml += `<span>Set ${i + 1}: ${set.p1} - ${set.p2} / </span>`;
@@ -2012,12 +1961,10 @@ function renderHistoryList()
                 <strong> 최종 스코어(final score): ${record.player1Sets} - ${record.player2Sets} </strong>  ${setsHtml}</p>
                 ${record.memo ? `<p class="history-memo">메모(match notes): ${record.memo}</p>` : ''}
             </div>`;
-        
+
         const playBtn = item.querySelector('.play-video-btn');
-        if (playBtn)
-        {
-            playBtn.addEventListener('click', (e) =>
-            {
+        if (playBtn) {
+            playBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 playHistoryVideo(playBtn.dataset.videourl);
             });
@@ -2027,8 +1974,7 @@ function renderHistoryList()
 }
 
 // --- 7. INITIALIZATION ---
-function initializeApp()
-{
+function initializeApp() {
     renderPlayerList();
     loadHistory();
     gameState.selectedLang = localStorage.getItem('selectedLang') || 'ko-KR';
@@ -2158,7 +2104,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const enableRecordingSwitch = document.getElementById('enableRecording');
     const recordingOptionsDiv = document.getElementById('recordingOptions');
-    enableRecordingSwitch.addEventListener('change', function() {
+    enableRecordingSwitch.addEventListener('change', function () {
         recordingOptionsDiv.style.display = this.checked ? 'block' : 'none';
     });
     // --- Web Speech fallback for iOS / desktop when Android native is not available ---
@@ -2189,7 +2135,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 webRecActive = false;
                 // auto-restart for continuous mode when user didn't explicitly stop
                 if (webRec && webRec.continuous && isVoiceListening) {
-                    try { webRec.start(); webRecActive = true; } catch (e) {}
+                    try { webRec.start(); webRecActive = true; } catch (e) { }
                 }
             };
             return r;
@@ -2206,7 +2152,7 @@ document.addEventListener('DOMContentLoaded', function () {
         try { webRec.start(); webRecActive = true; return true; } catch (e) { console.error(e); return false; }
     }
 
-    function stopWebRecognition() { if (webRec) { try { webRec.stop(); webRecActive = false; } catch (e) {} } }
+    function stopWebRecognition() { if (webRec) { try { webRec.stop(); webRecActive = false; } catch (e) { } } }
 
     // 음성인식 테스트 버튼 이벤트
     const voiceTestBtn = document.getElementById('voiceTestBtn');
