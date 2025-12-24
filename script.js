@@ -375,10 +375,10 @@ function showPlayerStats(playerName) {
     const ctx = document.getElementById('playerScoreChart').getContext('2d');
     if (_playerScoreChart) _playerScoreChart.destroy();
 
-    // build recent 30-day labels (YYYY-MM-DD)
+    // build recent 7-day labels (YYYY-MM-DD)
     const endDate = new Date();
     const startDate = new Date();
-    startDate.setDate(endDate.getDate() - 29);
+    startDate.setDate(endDate.getDate() - 7);
     const dateKeys = [];
     for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
         dateKeys.push(new Date(d).toISOString().slice(0,10));
@@ -422,30 +422,33 @@ function showPlayerStats(playerName) {
         const winsData = winsBySportDate[k] || dateKeys.map(() => 0);
         const lossesData = lossesBySportDate[k] || dateKeys.map(() => 0);
         // track max for scale
-        winsData.forEach(v => { if (v > maxVal) maxVal = v; });
-        lossesData.forEach(v => { if (v > maxVal) maxVal = v; });
-
+        // winsData.forEach(v => { if (v > maxVal) maxVal = v; });
+        // lossesData.forEach(v => { if (v > maxVal) maxVal = v; });
+// maxVal 계산 (양수만)
+    [...winsData, ...lossesData].forEach(v => { 
+        if (v > maxVal) maxVal = v; 
+    });
         datasets.push({
             label: `${sportLabels[idx]} (Wins)`,
             data: winsData,
             backgroundColor: colorMap[k]?.win || '#4CAF50',
             borderColor: colorMap[k]?.win || '#4CAF50',
             borderWidth: 1,
-            stack: `stack-${k}`
+            stack: `win-${k}`
         });
 
         datasets.push({
             label: `${sportLabels[idx]} (Losses)`,
-            data: lossesData.map(v => -v), // negative to show below axis
+            data: lossesData, //lossesData.map(v => -v), // negative to show below axis
             backgroundColor: colorMap[k]?.loss || '#9e9e9e',
             borderColor: colorMap[k]?.loss || '#9e9e9e',
             borderWidth: 1,
-            stack: `stack-${k}`
+            stack: `losses-${k}`
         });
     });
 
     // determine symmetric scale limits
-    const suggestedMax = Math.max(1, Math.ceil(maxVal / 1) );
+    const suggestedMax = Math.max(1, Math.ceil(maxVal / 1.1) );
 
     _playerScoreChart = new Chart(ctx, {
         type: 'bar',
@@ -453,13 +456,15 @@ function showPlayerStats(playerName) {
         options: {
             responsive: true,
             plugins: {
-                legend: { position: 'top' },
+                legend: {  display: false  },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
                             // show absolute value and sport/date
-                            const raw = context.raw ?? context.parsed.y ?? context.parsed;
-                            const val = Math.abs(raw);
+                            // const raw = context.raw ?? context.parsed.y ?? context.parsed;
+                            // const val = Math.abs(raw);
+                            // return `${context.dataset.label}: ${val}`;
+                            const val = context.raw ?? context.parsed.y ?? 0;
                             return `${context.dataset.label}: ${val}`;
                         }
                     }
@@ -469,9 +474,8 @@ function showPlayerStats(playerName) {
                 x: { stacked: true },
                 y: {
                     stacked: true,
-                    beginAtZero: false,
-                    suggestedMin: -suggestedMax,
-                    suggestedMax: suggestedMax
+                    beginAtZero: true,
+                max: suggestedMax  // 최대값 제한
                 }
             }
         }
@@ -532,7 +536,7 @@ function showPlayerStats(playerName) {
         options: {
             responsive: true,
             plugins: {
-                legend: { position: 'bottom' },
+                legend: { position: 'top' },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
