@@ -407,7 +407,7 @@ input:checked + .slider:before { transform: translateX(22px); }
     .score-display { font-size: 12rem; }
     /* Ensure modal content fits in landscape and footer/buttons remain accessible */
     .modal { align-items: flex-start; }
-    .modal-content { max-height: calc(100vh - 12px); }
+    .modal-content { max-height: calc(100vh - 24px); }
     .video-controls { flex-wrap: wrap; justify-content: center; }
 }
 
