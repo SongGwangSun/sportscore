@@ -291,7 +291,7 @@ function renderPlayerList() {
                 </div>
                 <div class="action-btns">
                     <button onclick="showPlayerStats('${player.name}')" style="padding: 4px 8px; margin-right:6px;">통계<br>(Stats)</button>
-                    <button onclick="deletePlayer('${player.name}')" style="padding: 4px 8px; margin-right:6px; ">삭제<br>(Delete)</button>
+                    <button onclick="deletePlayer('${player.name}')" style="padding: 4px 8px; margin-right:6px;  margin-right:6px; color: red;">삭제<br>(Delete)</button>
                 </div>
             </div>
         `;
