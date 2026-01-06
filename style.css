@@ -429,3 +429,39 @@ input:checked + .slider:before { transform: translateX(22px); }
     width: 100%;
     max-width: 600px;
 }
+
+.player-input-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 6px;
+}
+
+.player-input-group label {
+    font-weight: 600;
+    min-width: 60px;
+}
+
+.player-input-group input {
+    flex: 1;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+/* 블루팀 배경색 */
+.player-input-group.blue-team {
+    background-color: #e3f2fd;      /* 연한 파랑 */
+}
+.player-input-group.blue-team label {
+    color: #0d47a1;
+}
+
+/* 레드팀 배경색 */
+.player-input-group.red-team {
+    background-color: #ffebee;      /* 연한 빨강 */
+}
+.player-input-group.red-team label {
+    color: #b71c1c;
+}
