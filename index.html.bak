@@ -21,8 +21,8 @@
 <div id="gameSelection" class="screen">
     <div style="display:flex;align-items:center;gap:0.5rem;width:100%;justify-content:space-between;">
         <img src="images/SportScore.png" alt="Sport Score 로고"
-             style="height: auto; max-width: 120px; padding:1px; margin:0.1;">
-
+             style="height:60px;margin:0; /* 적절한 높이 설정 */"
+             class="sport-score-banner">
         <!--        <h1 style="margin:0;">Sport Score</h1>-->
 
         <button id="gameMenuBtn" class="control-btn"

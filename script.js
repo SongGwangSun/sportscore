@@ -129,6 +129,9 @@ let currentStream, facingMode = 'user', timeUpdateInterval, mediaRecorder, recor
 let useVoiceRecognition = false;
 let isVoiceListening = false;
 
+// video 녹화 수동 플레그
+let isStoppingFromBackground = false
+
 let players = JSON.parse(localStorage.getItem('sport_players')) || [];
 let editingPlayerName = null; // 수정 모드 추적용
 let ServerCount = 1;    // 피클볼 서브 규칙 (처음만 1인 서브 교체)
@@ -148,7 +151,13 @@ const sportPresets = {
     pickleball: 11
 };
 // --- 안드로이드로부터 호출될 전역 함수 정의 ---
-window.onVoiceReady = function () {
+window.stopRecording = function() {
+    console.log("video stop.");
+    isStoppingFromBackground = true;
+    // 필요하다면, '준비 완료' UI 피드백을 줄 수 있음
+};
+
+window.onVoiceReady = function() {
     console.log("Voice recognizer is ready.");
     // 필요하다면, '준비 완료' UI 피드백을 줄 수 있음
 };
@@ -344,6 +353,32 @@ function updateTotalSummary() {
 // --- Player statistics rendering ---
 let _playerScoreChart = null;
 let _playerWinChart = null;
+/**
+ * 선수 전적 업데이트 (날짜 기반 객체 저장)
+ */
+function updatePlayerStats(playerName, isWin, opponentName, winnerScore, loserScore) {
+    const playerIndex = players.findIndex(p => p.name === playerName);
+
+    if (playerIndex !== -1) {
+        if (isWin) players[playerIndex].wins++;
+        else players[playerIndex].losses++;
+
+        // 상세 경기 객체 생성
+        const matchRecord = {
+            id: Date.now() + Math.random(), // 고유 ID
+            date: new Date().toISOString(), // 정렬을 위한 ISO 날짜
+            result: isWin ? 'W' : 'L',
+            opponent: opponentName,
+            score: `${winnerScore}:${loserScore}`
+        };
+
+        // 히스토리에 추가
+        players[playerIndex].history.push(matchRecord);
+
+        // 로컬 스토리지 저장 및 UI 갱신
+        updateStorageAndRender();
+    }
+}
 
 function closePlayerStats() {
     const modal = document.getElementById('playerStatsModal');
