@@ -14,6 +14,8 @@
     <meta name="format-detection" content="telephone=no">
     <meta name="apple-touch-fullscreen" content="yes">
     <meta name="apple-mobile-web-app-orientations" content="portrait">
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 
 <body>
@@ -389,18 +391,30 @@
 <!-- History 모달 -->
 <div id="historyModal" class="modal">
     <div class="modal-content" style="width: 95vw; max-width: 600px;">
-        <!--        <button class="modal-close" onclick="closeHistoryModal()" aria-label="닫기(Close)">&times;-->
-        <!--        </button>-->
         <h2>경기 기록</h2>
         <div id="historyList" style="max-height: 70vh; overflow-y: auto; margin-top: 1rem;">
-            <!-- History items will be populated here -->
+            <!-- 날짜별로 그룹화된 경기 기록이 여기에 표시됩니다. -->
         </div>
         <div class="modal-footer">
-            <button class="modal-action" onclick="clearHistory()">전체 삭제(Delete all)</button>
+            <button class="modal-action" onclick="importHistory()">가져오기(Import)</button>
+            <button class="modal-action destructive" onclick="clearHistory()">전체 삭제(Delete all)</button>
             <button class="modal-action" onclick="closeHistoryModal()">닫기(Close)</button>
         </div>
     </div>
 </div>
+
+<!-- QR Scanner Modal -->
+<div id="qrScannerModal" class="modal">
+    <div class="modal-content">
+        <h2 style="margin-top:0;">QR 코드 스캔</h2>
+        <div id="qr-reader" style="width: 100%;"></div>
+        <div id="qr-reader-results"></div>
+        <div class="modal-footer">
+            <button class="modal-action" onclick="closeQrScannerModal()">취소(Cancel)</button>
+        </div>
+    </div>
+</div>
+
 
 <!-- Saved Names Manager 모달 -->
 <div id="savedNamesModal" class="modal">
@@ -493,6 +507,19 @@
         </div>
     </div>
 </div>
+
+<!-- QR Code Modal -->
+<div id="qrCodeModal" class="modal">
+    <div class="modal-content" style="text-align: center;">
+        <h2 style="margin-top:0;">경기 기록 공유</h2>
+        <div id="qrcode" style="padding: 1rem; background: white; display: inline-block;"></div>
+        <p style="margin-top: 1rem;">이 QR코드를 다른 기기에서 스캔하여 경기 기록을 가져오세요.</p>
+        <div class="modal-footer">
+            <button class="modal-action" onclick="closeQrCodeModal()">닫기(Close)</button>
+        </div>
+    </div>
+</div>
+
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
