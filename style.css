@@ -476,8 +476,7 @@ input:checked + .slider:before { transform: translateX(22px); }
     color: #b71c1c;
 }
 
-<style>
-  .player-btn {
+.player-btn {
     padding: 6px 10px;        /* 여백 동일 */
     margin-right: 6px;        /* 간격 동일 */
     cursor: pointer;
@@ -486,9 +485,11 @@ input:checked + .slider:before { transform: translateX(22px); }
     background-color: #fff;   /* 배경 동일 */
     font-size: 14px;          /* 글자 크기 동일 */
     line-height: 1.2;         /* 줄 높이 */
-  }
+}
 
-  .player-btn.delete {
+.player-btn.delete {
     color: red;               /* 삭제 버튼만 글자색만 변경 */
-  }
-</style>
+}
+.player-btn:hover {
+    background-color: #f0f0f0; /* 호버 시 배경색 동일 */
+}
