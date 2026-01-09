@@ -125,6 +125,7 @@ let savedNames = [];
 let gameHistory = [];
 let voicesList = [];
 let currentStream, facingMode = 'user', timeUpdateInterval, mediaRecorder, recordedChunks = [];
+let html5QrCode = null; // QR 코드 스캐너 인스턴스
 
 let useVoiceRecognition = false;
 let isVoiceListening = false;
@@ -236,6 +237,31 @@ window.onVoiceError = function (error) {
     }
 };
 
+function onQrCodeScanned(qrData) {
+    try {
+        const newRecord = JSON.parse(qrData);
+        if (!newRecord || !newRecord.id) {
+            alert("유효하지 않은 QR 코드입니다.");
+            return;
+        }
+
+        // ID를 기준으로 중복 확인
+        const isDuplicate = gameHistory.some(record => record.id === newRecord.id);
+
+        if (isDuplicate) {
+            alert("이미 존재하는 경기 기록입니다.");
+        } else {
+            gameHistory.unshift(newRecord); // 새 기록을 맨 앞에 추가
+            saveHistory();
+            renderHistoryList();
+            alert("경기 기록을 성공적으로 가져왔습니다.");
+        }
+    } catch (e) {
+        console.error("QR 코드 데이터 처리 실패:", e);
+        alert("경기 기록을 가져오는 데 실패했습니다.");
+    }
+    closeQrScannerModal();
+};
 
 
 // --- 2. DATA PERSISTENCE ---
@@ -274,36 +300,61 @@ function savePlayer() {
 function renderPlayerList() {
     const listContainer = document.getElementById('savedNamesList');
     listContainer.innerHTML = "";
-    if (players.length === 0) {
+    if (players.length === 0)
+    {
         listContainer.innerHTML = '<p>저장된 선수 기록이 없습니다.<br>There are no saved player records</p>';
         return;
     }
     players.forEach(player => {
-        const winRate = (player.wins + player.losses) > 0
-            ? ((player.wins / (player.wins + player.losses)) * 100).toFixed(1)
-            : 0;
+        // 1. 최근 10경기 날짜순 추출 (내림차순 정렬)
+        const recentMatches = [...player.history]
+            .sort((a, b) => new Date(b.date) - new Date(a.date))
+            .slice(0, 10);
+
+        const totalPlayed = player.wins + player.losses;
+        const winRate = totalPlayed > 0 ? ((player.wins / totalPlayed) * 100).toFixed(1) : 0;
 
         const item = document.createElement('div');
         item.className = 'player-card';
-        item.style = `
-            background: #fff;
-            margin-bottom: 8px;
-            padding: 12px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        `;
+        item.style = "background:#fff; margin-bottom:12px; padding:15px; border-radius:10px; border:1px solid #eee;";
+
+        // 2. 최근 10경기 승/패 스트릭 HTML 생성
+        const streakHtml = recentMatches.map(m => `
+            <span style="
+                display:inline-block; width:18px; height:18px; line-height:18px;
+                text-align:center; font-size:10px; border-radius:3px; margin-right:3px;
+                background: ${m.result === 'W' ? '#4dabf7' : '#ff8787'}; color: #fff;
+            " title="${m.date.split('T')[0]} vs ${m.opponent}">
+                ${m.result}
+            </span>
+        `).join('');
 
         item.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                 <div>
-                    <h4 style="margin: 0; font-size: 1rem;">${player.name}</h4>
-                    <p style="margin: 4px 0 0; font-size: 0.85rem; color: #666;">
-                        전적: <strong>${player.wins}승 ${player.losses}패</strong> (승률 ${winRate}%)
+                    <h4 style="margin:0; font-size:1.2rem;">${player.name}</h4>
+                    <p style="margin:5px 0; font-size:0.9rem; color:#666;">
+                        통산: <strong>${player.wins}승 ${player.losses}패</strong> (승률 ${winRate}%)
                     </p>
+                    <div style="margin-top:10px;">
+                        <span style="font-size:0.8rem; color:#999; display:block; margin-bottom:4px;">최근 10경기 현황:</span>
+                        ${streakHtml || '<span style="color:#ccc; font-size:0.8rem;">경기 기록 없음</span>'}
+                    </div>
                 </div>
-                <div class="action-btns">
-                    <button onclick="showPlayerStats('${player.name}')" style="padding: 4px 8px; margin-right:6px;">통계<br>(Stats)</button>
-                    <button onclick="deletePlayer('${player.name}')" style="padding: 4px 8px; margin-right:6px;  margin-right:6px; color: red;">삭제<br>(Delete)</button>
+                <div style="display:flex; flex-direction:column; gap:5px;">
+                <button
+                  onclick="showPlayerStats('${player.name}')"
+                  class="player-btn"
+                >
+                  통계<br>(Stats)
+                </button>
+
+                <button
+                  onclick="deletePlayer('${player.name}')"
+                  class="player-btn delete"
+                >
+                  삭제<br>(Delete)
+                </button>
                 </div>
             </div>
         `;
@@ -885,13 +936,20 @@ function showEndScreen(winner) {
     console.log('showEndScreen: start.');
     const gameEndScreen = document.getElementById('gameEnd');
     gameState.setScores.push({ p1: gameState.player1Score, p2: gameState.player2Score });
-    if (winner === 1) {
-        recordMatchResult(gameState.player1Name, true)
-        recordMatchResult(gameState.player2Name, false)
+    if(winner === 1)
+    {
+        updatePlayerStats(gameState.player1Name, true, gameState.player2Name, gameState.player1Score, gameState.player2Score)
+        updatePlayerStats(gameState.player2Name, false, gameState.player2Name, gameState.player1Score, gameState.player2Score)
+//    }
+//        recordMatchResult(gameState.player1Name, true)
+//        recordMatchResult(gameState.player2Name, false)
     }
-    else {
-        recordMatchResult(gameState.player1Name, false)
-        recordMatchResult(gameState.player2Name, true)
+    else
+    {
+        updatePlayerStats(gameState.player2Name, true, gameState.player2Name, gameState.player2Score, gameState.player1Score)
+        updatePlayerStats(gameState.player1Name, false, gameState.player1Name, gameState.player2Score, gameState.player1Score)
+//        recordMatchResult(gameState.player1Name, false)
+//        recordMatchResult(gameState.player2Name, true)
     }
     const winnerName = winner === 1 ? gameState.player1Name : gameState.player2Name;
     document.getElementById('winnerText').textContent = winnerName;
@@ -1240,6 +1298,72 @@ function speakCurrentScore() {
     }
 }
 function toggleCamera() { const camView = document.getElementById('cameraView'); if (camView.style.display === 'block') stopCamera(); else startCamera(); }
+
+// --- QR Code Functions ---
+function shareHistoryEntry(recordId) {
+    const record = gameHistory.find(r => r.id.toString() === recordId.toString());
+    if (!record) return;
+
+    const qrCodeData = JSON.stringify(record);
+    const qrcodeContainer = document.getElementById('qrcode');
+    qrcodeContainer.innerHTML = ''; // 기존 QR 코드 삭제
+
+    try {
+        const qr = qrcode(0, 'L');
+        qr.addData(qrCodeData);
+        qr.make();
+        qrcodeContainer.innerHTML = qr.createImgTag(6, 10); // size: 6, margin: 10
+        document.getElementById('qrCodeModal').classList.add('active');
+    } catch (e) {
+        console.error('QR Code generation failed:', e);
+        alert("QR 코드를 생성하는 데 실패했습니다.");
+    }
+}
+
+function closeQrCodeModal() {
+    document.getElementById('qrCodeModal').classList.remove('active');
+}
+
+function importHistory() {
+    document.getElementById('qrScannerModal').classList.add('active');
+    startQrScanner();
+}
+
+function closeQrScannerModal() {
+    stopQrScanner();
+    document.getElementById('qrScannerModal').classList.remove('active');
+}
+
+function startQrScanner() {
+    html5QrCode = new Html5Qrcode("qr-reader");
+    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+    const onScanSuccess = (decodedText, decodedResult) => {
+        onQrCodeScanned(decodedText);
+    };
+
+    const onScanFailure = (error) => {
+        // console.warn(`Code scan error = ${error}`);
+    };
+
+    html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
+        .catch(err => {
+            alert("카메라를 시작할 수 없습니다. 권한을 확인해주세요.");
+            console.error("Unable to start scanning.", err);
+        });
+}
+
+function stopQrScanner() {
+    if (html5QrCode) {
+        html5QrCode.stop().then(ignore => {
+            // QR Code scanning is stopped.
+        }).catch(err => {
+            // Stop failed, handle it.
+            console.error("Failed to stop QR scanner.", err);
+        });
+        html5QrCode = null;
+    }
+}
 
 async function startCamera(isForRecording = false) {
     // 이미 스트림이 있으면 아무것도 안 함 (효율성)
@@ -1967,54 +2091,94 @@ function renderHistoryList() {
         listEl.innerHTML = '<p>저장된 경기 기록이 없습니다.<br>There are no saved match records</p>';
         return;
     }
-    gameHistory.forEach(record => {
-        const item = document.createElement('div');
-        item.className = 'history-item';
-        const gameTitle = gameRules[record.game]?.title.replace(' 규칙', '') || record.game;
-        let setsHtml = '';
-        let setCount = 0;
-        if (record.winner === record.player1Name) setCount = record.player1Sets;
-        else setCount = record.player1Sets + record.player2Sets;
-        if (record.setScores && Array.isArray(record.setScores)) {
-            setsHtml = '<div class="set-scores-container">';
-            record.setScores.forEach((set, i) => {
-                if (setCount > i) {
-                    if (i + 1 === setCount)
-                        setsHtml += `<span>Set ${i + 1}: ${set.p1} - ${set.p2}  </span>`;
-                    else
-                        setsHtml += `<span>Set ${i + 1}: ${set.p1} - ${set.p2} / </span>`;
-                }
-            });
-            setsHtml += '</div>';
-        }
-        // console.log('renderHistoryList Rendering history finish');
-        item.innerHTML = `
-            <div class="history-item-header">
-                <strong>${gameTitle}</strong>
-                ${record.videoUrl ? `<button class="play-video-btn" data-videourl="${record.videoUrl}">영상 보기(Watch the video)</button>` : ''}
-                <span>${new Date(record.date).toLocaleString()}</span>
-            </div>
-            <div class="history-item-body">
-                <p>${record.winner === record.player1Name ? '👑' : ''} ${record.player1Name} vs ${record.winner === record.player2Name ? '👑' : ''} ${record.player2Name}
-                <strong> 최종 스코어(final score): ${record.player1Sets} - ${record.player2Sets} </strong>  ${setsHtml}</p>
-                ${record.memo ? `<p class="history-memo">메모(match notes): ${record.memo}</p>` : ''}
-            </div>`;
 
-        const playBtn = item.querySelector('.play-video-btn');
-        if (playBtn) {
-            playBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                playHistoryVideo(playBtn.dataset.videourl);
-            });
+    // 1. 날짜별로 경기 기록 그룹화
+    const groupedByDate = gameHistory.reduce((acc, record) => {
+        const date = new Date(record.date).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+        if (!acc[date]) {
+            acc[date] = [];
         }
-        listEl.appendChild(item);
-    });
+        acc[date].push(record);
+        return acc;
+    }, {});
+
+    // 2. 그룹화된 데이터를 기반으로 HTML 생성
+    for (const date in groupedByDate) {
+        const dateGroupEl = document.createElement('div');
+        dateGroupEl.className = 'history-date-group';
+        
+        const dateHeader = document.createElement('h3');
+        dateHeader.className = 'history-date-header';
+        dateHeader.textContent = date;
+        dateGroupEl.appendChild(dateHeader);
+
+        groupedByDate[date].forEach(record => {
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            const gameTitle = gameRules[record.game]?.title.replace(' 규칙', '') || record.game;
+            
+            let setsHtml = '';
+            if (record.setScores && Array.isArray(record.setScores)) {
+                setsHtml = '<div class="set-scores-container">';
+                record.setScores.forEach((set, i) => {
+                    setsHtml += `<span>Set ${i + 1}: ${set.p1}-${set.p2}</span>`;
+                });
+                setsHtml += '</div>';
+            }
+
+            item.innerHTML = `
+                <div class="history-item-header">
+                    <strong>${gameTitle}</strong>
+                    <div class="history-item-controls">
+                        ${record.videoUrl ? `<button class="control-btn small" data-videourl="${record.videoUrl}" title="영상 보기">▶️</button>` : ''}
+                        <button class="control-btn small share-btn" data-record-id="${record.id}" title="공유">🔗</button>
+                    </div>
+                </div>
+                <div class="history-item-body">
+                    <p class="players">
+                        <span class="winner">${record.winner === record.player1Name ? '👑' : ''} ${record.player1Name}</span> 
+                        <span class="score">${record.player1Sets} - ${record.player2Sets}</span> 
+                        <span class="loser">${record.winner === record.player2Name ? '👑' : ''} ${record.player2Name}</span>
+                    </p>
+                     ${setsHtml}
+                    ${record.memo ? `<p class="history-memo">메모: ${record.memo}</p>` : ''}
+                </div>
+                <div class="history-item-footer">
+                    <span>${new Date(record.date).toLocaleTimeString('ko-KR')}</span>
+                </div>
+            `;
+
+            const playBtn = item.querySelector('[data-videourl]');
+            if (playBtn) {
+                playBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    playHistoryVideo(playBtn.dataset.videourl);
+                });
+            }
+            
+            const shareBtn = item.querySelector('.share-btn');
+            if (shareBtn) {
+                shareBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    shareHistoryEntry(shareBtn.dataset.recordId);
+                });
+            }
+
+            dateGroupEl.appendChild(item);
+        });
+        
+        listEl.appendChild(dateGroupEl);
+    }
 }
 
 // --- 7. INITIALIZATION ---
-function initializeApp() {
-    renderPlayerList();
+function initializeApp()
+{
     loadHistory();
+    loadPlayers(); // 선수 데이터 로드 함수 (별도 구현 필요 시)
+    renderPlayerList();
+    //loadPlayerNames();
+    //loadHistory();
     gameState.selectedLang = localStorage.getItem('selectedLang') || 'ko-KR';
     gameState.voiceName = localStorage.getItem('voiceName') || '';
     gameState.rate = parseFloat(localStorage.getItem('rate')) || 1;
@@ -2268,3 +2432,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
 });
 
+function loadPlayers() {
+    const data = localStorage.getItem('sport_players');
+    if(data) {
+        players = JSON.parse(data);
+    }
+}

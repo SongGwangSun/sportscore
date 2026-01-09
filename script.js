@@ -1312,7 +1312,7 @@ function shareHistoryEntry(recordId) {
         const qr = qrcode(0, 'L');
         qr.addData(qrCodeData);
         qr.make();
-        qrcodeContainer.innerHTML = qr.createImgTag(6, 10); // size: 6, margin: 10
+        qrcodeContainer.innerHTML = qr.createImgTag(5, 0); // size: 6, margin: 10
         document.getElementById('qrCodeModal').classList.add('active');
     } catch (e) {
         console.error('QR Code generation failed:', e);
