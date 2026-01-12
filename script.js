@@ -129,9 +129,8 @@ let html5QrCode = null; // QR 코드 스캐너 인스턴스
 
 let useVoiceRecognition = false;
 let isVoiceListening = false;
-
-// video 녹화 수동 플레그
-let isStoppingFromBackground = false
+let isStoppingFromBackground = false;
+let isGameOverStop = false; // 경기 종료로 인한 녹화 중지인지 구분
 
 let players = JSON.parse(localStorage.getItem('sport_players')) || [];
 let editingPlayerName = null; // 수정 모드 추적용
@@ -413,6 +412,7 @@ function updateTotalSummary() {
 // --- Player statistics rendering ---
 let _playerScoreChart = null;
 let _playerWinChart = null;
+
 /**
  * 선수 전적 업데이트 (날짜 기반 객체 저장)
  */
@@ -1591,6 +1591,11 @@ function closeHistoryVideo() {
     }
 }
 
+function toggleGameMenu() { const menu = document.getElementById('gameMenu'); menu.style.display = menu.style.display === 'block' ? 'none' : 'block'; }
+function showAbout() { document.getElementById('aboutModal')?.classList.add('active'); }
+function closeAboutModal() { document.getElementById('aboutModal')?.classList.remove('active'); }
+function showHistory() { renderHistoryList(); document.getElementById('historyModal')?.classList.add('active'); }
+function closeHistoryModal() { document.getElementById('historyModal')?.classList.remove('active'); }
 function voiceLanguage() { document.getElementById('voiceLanguage')?.classList.add('active'); }
 function closevoiceLanguage() { document.getElementById('voiceLanguage')?.classList.remove('active'); }
 /**

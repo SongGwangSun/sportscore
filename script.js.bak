@@ -129,9 +129,8 @@ let html5QrCode = null; // QR 코드 스캐너 인스턴스
 
 let useVoiceRecognition = false;
 let isVoiceListening = false;
-
-// video 녹화 수동 플레그
-let isStoppingFromBackground = false
+let isStoppingFromBackground = false;
+let isGameOverStop = false; // 경기 종료로 인한 녹화 중지인지 구분
 
 let players = JSON.parse(localStorage.getItem('sport_players')) || [];
 let editingPlayerName = null; // 수정 모드 추적용
@@ -413,6 +412,7 @@ function updateTotalSummary() {
 // --- Player statistics rendering ---
 let _playerScoreChart = null;
 let _playerWinChart = null;
+
 /**
  * 선수 전적 업데이트 (날짜 기반 객체 저장)
  */
@@ -475,8 +475,6 @@ function recordMatchResult(playerName, isWin) {
         updateStorageAndRender();
     }
 }
-//function savePlayerNames() { localStorage.setItem('savedNames', JSON.stringify(savedNames)); }
-//function loadPlayerNames() { const data = localStorage.getItem('savedNames'); if (data) savedNames = JSON.parse(data); }
 function saveHistory() {
     try {
         localStorage.setItem('gameHistory', JSON.stringify(gameHistory));
@@ -2141,6 +2139,219 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
 });
+
+function showPlayerStats(playerName) {
+    // gather matches involving this player
+    const matches = gameHistory.filter(r => r.player1Name === playerName || r.player2Name === playerName).slice().sort((a, b) => new Date(a.date) - new Date(b.date));
+    const labels = [];
+    const playerSets = [];
+    const opponentSets = [];
+    let wins = 0, losses = 0;
+    matches.forEach(m => {
+        const d = new Date(m.date);
+        labels.push(d.toLocaleDateString());
+        const isP1 = m.player1Name === playerName;
+        const pSets = isP1 ? m.player1Sets : m.player2Sets;
+        const oSets = isP1 ? m.player2Sets : m.player1Sets;
+        playerSets.push(pSets);
+        opponentSets.push(oSets);
+        if (pSets > oSets) wins++; else losses++;
+    });
+
+    document.getElementById('playerStatsHeader').textContent = `${playerName} — ${matches.length}경기 (${wins}승 ${losses}패)`;
+    document.getElementById('playerStatsSummary').textContent = matches.length ? `최근 경기: ${labels[labels.length - 1]} | 승률: ${((wins / (wins + losses || 1)) * 100).toFixed(1)}%` : '기록이 없습니다.';
+
+    // create horizontal stacked bar per-date for the recent 30 days, with sport/color-coded win/loss segments
+    const ctx = document.getElementById('playerScoreChart').getContext('2d');
+    if (_playerScoreChart) _playerScoreChart.destroy();
+
+    // build recent 7-day labels (YYYY-MM-DD)
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 7);
+    const dateKeys = [];
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        dateKeys.push(new Date(d).toISOString().slice(0, 10));
+    }
+    const dateLabels = dateKeys.map(k => k); // use ISO date labels; UI can be adjusted if needed
+
+    // sports and colors (sport color used as border; wins are green, losses are gray)
+    const sportKeys = Object.keys(sportPresets);
+    const sportLabels = sportKeys.map(k => (gameRules[k] && gameRules[k].title) ? gameRules[k].title.replace(' 규칙', '') : k);
+    const sportColors = { badminton: '#2e7d32', pingpong: '#ff9800', jokgu: '#1976d2', pickleball: '#8e24aa' };
+
+    // initialize per-sport per-date counts
+    const winsBySportDate = {};
+    const lossesBySportDate = {};
+    sportKeys.forEach(k => { winsBySportDate[k] = dateKeys.map(() => 0); lossesBySportDate[k] = dateKeys.map(() => 0); });
+
+    // aggregate gameHistory entries that fall within dateKeys
+    gameHistory.forEach(m => {
+        if (!m || !m.date) return;
+        const key = new Date(m.date).toISOString().slice(0, 10);
+        const di = dateKeys.indexOf(key);
+        if (di === -1) return; // outside range
+        if (!(sportKeys.includes(m.game))) return;
+        const isP1 = m.player1Name === playerName;
+        const pSets = isP1 ? m.player1Sets : m.player2Sets;
+        const oSets = isP1 ? m.player2Sets : m.player1Sets;
+        if (pSets > oSets) winsBySportDate[m.game][di]++; else lossesBySportDate[m.game][di]++;
+    });
+
+    // build datasets: for each sport add Wins (positive) and Losses (negative) so wins appear above and losses below
+    const colorMap = {
+        badminton: { win: '#4CAF50', loss: '#F44336' },
+        pingpong: { win: '#00BCD4', loss: '#E91E63' },
+        jokgu: { win: '#2196F3', loss: '#FF9800' },
+        pickleball: { win: '#9C27B0', loss: '#FFC107' }
+    };
+
+    const datasets = [];
+    let maxVal = 0;
+    sportKeys.forEach((k, idx) => {
+        const winsData = winsBySportDate[k] || dateKeys.map(() => 0);
+        const lossesData = lossesBySportDate[k] || dateKeys.map(() => 0);
+        // track max for scale
+        // winsData.forEach(v => { if (v > maxVal) maxVal = v; });
+        // lossesData.forEach(v => { if (v > maxVal) maxVal = v; });
+        // maxVal 계산 (양수만)
+        [...winsData, ...lossesData].forEach(v => {
+            if (v > maxVal) maxVal = v;
+        });
+        datasets.push({
+            label: `${sportLabels[idx]} (Wins)`,
+            data: winsData,
+            backgroundColor: colorMap[k]?.win || '#4CAF50',
+            borderColor: colorMap[k]?.win || '#4CAF50',
+            borderWidth: 1,
+            stack: `stack-${k}`
+        });
+
+        datasets.push({
+            label: `${sportLabels[idx]} (Losses)`,
+            data: lossesData, //lossesData.map(v => -v), // negative to show below axis
+            backgroundColor: colorMap[k]?.loss || '#9e9e9e',
+            borderColor: colorMap[k]?.loss || '#9e9e9e',
+            borderWidth: 1,
+            stack: `stack-${k}`
+        });
+    });
+
+    // determine symmetric scale limits
+    const suggestedMax = Math.max(1, Math.ceil(maxVal / 1.1));
+
+    _playerScoreChart = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: dateLabels, datasets },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            // show absolute value and sport/date
+                            // const raw = context.raw ?? context.parsed.y ?? context.parsed;
+                            // const val = Math.abs(raw);
+                            // return `${context.dataset.label}: ${val}`;
+                            const val = context.raw ?? context.parsed.y ?? 0;
+                            return `${context.dataset.label}: ${val}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: { stacked: true },
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    max: suggestedMax  // 최대값 제한
+                }
+            }
+        }
+    });
+
+    // render color-key table into playerStatsSummary (append to existing summary text)
+    const colorTableRows = sportKeys.map(k => {
+        const lab = (gameRules[k] && gameRules[k].title) ? gameRules[k].title.replace(' 규칙', '') : k;
+        const win = colorMap[k]?.win || '#4CAF50';
+        const loss = colorMap[k]?.loss || '#9e9e9e';
+        return `<tr><td style="padding:6px 8px">${lab}</td><td style="padding:6px 8px"><span style="display:inline-block;width:18px;height:14px;background:${win};border:1px solid #ccc;margin-right:8px;vertical-align:middle"></span>${win}</td><td style="padding:6px 8px"><span style="display:inline-block;width:18px;height:14px;background:${loss};border:1px solid #ccc;margin-right:8px;vertical-align:middle"></span>${loss}</td></tr>`;
+    }).join('');
+    const tableHtml = `\n<table style="border-collapse:collapse;margin-top:8px;width:100%;font-size:0.95rem">` +
+        `<thead><tr><th style="text-align:left;padding:6px 8px">종목</th><th style="text-align:left;padding:6px 8px">승 색상</th><th style="text-align:left;padding:6px 8px">패 색상</th></tr></thead><tbody>${colorTableRows}</tbody></table>`;
+    const summaryEl = document.getElementById('playerStatsSummary');
+    if (summaryEl) {
+        // keep existing text and append table
+        const existing = summaryEl.textContent || '';
+        summaryEl.innerHTML = `${existing}${tableHtml}`;
+    }
+
+    // create radar chart showing per-sport win rate (육각형 능력치 형태)
+    const ctx2 = document.getElementById('playerWinChart').getContext('2d');
+    if (_playerWinChart) _playerWinChart.destroy();
+
+    // Gather per-sport stats (games played and win rate)
+    // reuse `sportKeys` declared above for the first chart
+    const labelsRadar = sportKeys.map(k => (gameRules[k] && gameRules[k].title) ? gameRules[k].title.replace(' 규칙', '') : k);
+    const gamesCounts = sportKeys.map(k => {
+        return gameHistory.filter(r => r.game === k && (r.player1Name === playerName || r.player2Name === playerName)).length;
+    });
+    const winRates = sportKeys.map(k => {
+        const matchesForSport = gameHistory.filter(r => r.game === k && (r.player1Name === playerName || r.player2Name === playerName));
+        const total = matchesForSport.length;
+        if (!total) return 0;
+        let w = 0;
+        matchesForSport.forEach(m => {
+            const isP1 = m.player1Name === playerName;
+            const pSets = isP1 ? m.player1Sets : m.player2Sets;
+            const oSets = isP1 ? m.player2Sets : m.player1Sets;
+            if (pSets > oSets) w++;
+        });
+        return Math.round((w / total) * 100); // percent (0-100)
+    });
+
+    _playerWinChart = new Chart(ctx2, {
+        type: 'radar',
+        data: {
+            labels: labelsRadar,
+            datasets: [{
+                label: '승률 (%)',
+                data: winRates,
+                backgroundColor: 'rgba(54,162,235,0.15)',
+                borderColor: 'rgba(54,162,235,1)',
+                pointBackgroundColor: 'rgba(54,162,235,1)'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            const idx = context.dataIndex;
+                            const val = context.formattedValue;
+                            const games = gamesCounts[idx] || 0;
+                            return `${context.dataset.label}: ${val}% (경기수: ${games})`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    suggestedMax: 100,
+                    ticks: { stepSize: 20 }
+                }
+            }
+        }
+    });
+
+    // show modal
+    const modal = document.getElementById('playerStatsModal');
+    if (modal) modal.classList.add('active');
+}
 
 function loadPlayers() {
     const data = localStorage.getItem('sport_players');
