@@ -239,6 +239,8 @@ window.onVoiceError = function (error) {
 function onQrCodeScanned(qrData) {
     try {
         const newRecord = JSON.parse(qrData);
+        console.log('newRecord 1: ' + qrData);
+        console.log('newRecord 2: ' + newRecord);
         if (!newRecord || !newRecord.id) return alert("유효하지 않은 QR 코드입니다. This is an invalid QR code.");
         if (gameHistory.some(record => record.id === newRecord.id)) return alert("이미 존재하는 기록입니다.This is a record that already exists.");
 
