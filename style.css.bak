@@ -405,7 +405,13 @@ input:checked + .slider:before { transform: translateX(22px); }
     .scoreboard-top-bar { display: flex; }
     .control-buttons { display: none; }
     .scoreboard-main-area { flex-direction: column; }
-    .score-display { font-size: 8rem; }
+    .player-name { font-size: 2rem; }
+    .set-score { font-size: 1.2rem; }
+    .score-display { font-size: 12rem; }
+    /* Ensure modal content fits in landscape and footer/buttons remain accessible */
+    .modal { align-items: flex-start; }
+    .modal-content { max-height: calc(100vh - 24px); }
+    .video-controls { flex-wrap: wrap; justify-content: center; }
 }
 
 @media (orientation: landscape) {
@@ -423,11 +429,54 @@ input:checked + .slider:before { transform: translateX(22px); }
 
 #gameSelection, .modal { display: none; }
 .screen.active, .modal.active { display: flex; }
-
-.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
-.modal-content { background: #fff; padding: 2rem; border-radius: 8px; max-width: 90vw; max-height: calc(100vh - 40px); overflow: auto; }
-
 /* 1. 모달 배경: 화면 전체를 덮고 자식을 정중앙에 배치 */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6); /* 배경 어둡게 */
+    align-items: center;    /* 수직 중앙 정렬 */
+    justify-content: center; /* 수평 중앙 정렬 */
+}
+
+/* 2. 모달 컨텐츠: 내용물에 맞게 크기 조절 */
+.modal-content {
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 12px;
+    max-width: 400px;       /* 최대 너비 제한 */
+    width: 90%;             /* 모바일에서 90% 너비 유지 */
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    text-align: center;     /* 내부 텍스트 및 인라인 요소 중앙 정렬 */
+    box-sizing: border-box;
+    max-height: calc(100vh - 40px); overflow: auto;
+}
+
+/* 3. QR 코드 컨테이너: 내부 요소가 중앙에 오도록 */
+#qrcode {
+    margin: 1.5rem auto;    /* 상하 여백 및 좌우 중앙 정렬 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #fff;
+    padding: 10px;
+    border: 1px solid #eee;
+}
+
+/* 하단 버튼 스타일 */
+.modal-action {
+    width: 100%;
+    padding: 0.8rem;
+    margin-top: 1rem;
+    cursor: pointer;
+    border: none;
+    background: #333;
+    color: white;
+    border-radius: 6px;
+}
 
 /* --- Data List Styles --- */
 .saved-name-item, .picker-name-item { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border-bottom: 1px solid #e9ecef; cursor: pointer; }

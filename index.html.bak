@@ -22,7 +22,7 @@
 <!-- 게임 선택 화면 -->
 <div id="gameSelection" class="screen">
     <div style="display:flex;align-items:center;gap:0.5rem;width:100%;justify-content:space-between;">
-        <img src="images/SportScore.png" alt="Sport Score 로고"
+        <img src="images/SportScore.webp" alt="Sport Score 로고"
              style="height: auto; max-width: 120px; padding:1px; margin:0.1;">
 
         <!--        <h1 style="margin:0;">Sport Score</h1>-->
@@ -379,9 +379,9 @@
         <!--        <button class="modal-close" onclick="closeAboutModal()" aria-label="닫기(Close)">&times;-->
         <!--        </button>-->
         <h2>SportScore</h2>
-        <p>버전(Version): <strong>v1.4</strong></p>
+        <p>버전(Version): <strong>v1.5</strong></p>
         <p>제작(creation): <strong>song2ne</strong></p>
-        <p>문의(Inquiry): <a href="mailto:songgs33@gmail.com">songgs33@gmail.com</a></p>
+        <p>문의(Inquiry): <a href="mailto:songgs@song2nes.com">songgs@song2nes.com</a></p>
         <div class="modal-footer">
             <button class="modal-action" onclick="closeAboutModal()">확인(OK)</button>
         </div>
@@ -515,7 +515,7 @@
 <div id="qrCodeModal" class="modal">
     <div class="modal-content" style="text-align: center;">
         <h2 style="margin-top:0;">경기 기록 공유</h2>
-        <div id="qrcode" style="padding: 0.1rem; background: white; display: inline-block;"></div>
+        <div id="qrcode" style=" background: white; display: inline-block;"></div>
         <p style="margin-top: 0rem;">QR코드를 다른 기기에서 스캔하여 경기 기록을 가져오세요.<br>Scan QR code to sync match data with another device.</p>
         <div class="modal-footer">
             <button class="modal-action" onclick="closeQrCodeModal()">닫기(Close)</button>
