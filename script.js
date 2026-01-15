@@ -239,8 +239,7 @@ window.onVoiceError = function (error) {
 function onQrCodeScanned(qrData) {
     try {
         const newRecord = JSON.parse(qrData);
-        console.log('newRecord 1: ' + qrData);
-        console.log('newRecord 2: ' + newRecord);
+        console.log('QR : ' + qrData);
         if (!newRecord || !newRecord.id) return alert("유효하지 않은 QR 코드입니다. This is an invalid QR code.");
         if (gameHistory.some(record => record.id === newRecord.id)) return alert("이미 존재하는 기록입니다.This is a record that already exists.");
 
@@ -252,10 +251,10 @@ function onQrCodeScanned(qrData) {
         };
 
         checkAndAdd(newRecord.player1Name);
-        console.log('checkAndAdd 1: ' + newRecord.player1Name);
+        // console.log('checkAndAdd 1: ' + newRecord.player1Name);
 
         checkAndAdd(newRecord.player2Name);
-        console.log('checkAndAdd 2: ' + newRecord.player2Name);
+        // console.log('checkAndAdd 2: ' + newRecord.player2Name);
         updateStorageAndRender();
         console.log('updateStorageAndRender');
 
@@ -266,7 +265,7 @@ function onQrCodeScanned(qrData) {
         console.log('renderHistoryList');
         alert("경기 기록을 성공적으로 가져왔습니다. Match records were successfully imported.");
     } catch (e) {
-        console.error(e);
+        console.error(e.Error || e.message || e);
         alert("데이터 처리 오류가 발생했습니다. A data processing error occurred.");
     }
     closeQrScannerModal();
@@ -1053,7 +1052,7 @@ function startQrScanner() {
     };
 
     const onScanFailure = (error) => {
-        // console.warn(`Code scan error = ${error}`);
+        console.warn(`Code scan error = ${error}`);
     };
 
     html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
