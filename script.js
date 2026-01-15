@@ -248,13 +248,20 @@ function onQrCodeScanned(qrData) {
                 players.push({ name: name, wins: 0, losses: 0, history: [] });
             }
         };
+
         checkAndAdd(newRecord.player1Name);
+        console.log('checkAndAdd 1: ' + newRecord.player1Name);
+
         checkAndAdd(newRecord.player2Name);
+        console.log('checkAndAdd 2: ' + newRecord.player2Name);
         updateStorageAndRender();
+        console.log('updateStorageAndRender');
 
         gameHistory.unshift(newRecord);
         saveHistory();
+        console.log('saveHistory');
         renderHistoryList();
+        console.log('renderHistoryList');
         alert("경기 기록을 성공적으로 가져왔습니다. Match records were successfully imported.");
     } catch (e) {
         console.error(e);
