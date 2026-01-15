@@ -238,10 +238,20 @@ window.onVoiceError = function (error) {
 
 function onQrCodeScanned(qrData) {
     try {
-        const newRecord = JSON.parse(qrData);
-        console.log('QR : ' + qrData);
-        if (!newRecord || !newRecord.id) return alert("유효하지 않은 QR 코드입니다. This is an invalid QR code.");
-        if (gameHistory.some(record => record.id === newRecord.id)) return alert("이미 존재하는 기록입니다.This is a record that already exists.");
+        const decodedData = decodeURIComponent(escape(atob(qrData)));
+        const newRecord = JSON.parse(decodedData);
+        if (!newRecord || !newRecord.id)
+        {
+            alert("유효하지 않은 QR 코드입니다. This is an invalid QR code.");
+            closeQrScannerModal();
+            return ;
+        }
+        if (gameHistory.some(record => record.id === newRecord.id))
+        {
+            alert("이미 존재하는 기록입니다.This is a record that already exists.");
+            closeQrScannerModal();
+            return ;
+        }
 
         // 선수 자동 추가 로직 (데이터 무결성 및 다운 방지)
         const checkAndAdd = (name) => {
@@ -249,23 +259,16 @@ function onQrCodeScanned(qrData) {
                 players.push({ name: name, wins: 0, losses: 0, history: [] });
             }
         };
-
         checkAndAdd(newRecord.player1Name);
-        // console.log('checkAndAdd 1: ' + newRecord.player1Name);
-
         checkAndAdd(newRecord.player2Name);
-        // console.log('checkAndAdd 2: ' + newRecord.player2Name);
         updateStorageAndRender();
-        console.log('updateStorageAndRender');
 
         gameHistory.unshift(newRecord);
         saveHistory();
-        console.log('saveHistory');
         renderHistoryList();
-        console.log('renderHistoryList');
         alert("경기 기록을 성공적으로 가져왔습니다. Match records were successfully imported.");
     } catch (e) {
-        console.error(e.Error || e.message || e);
+        console.error(e);
         alert("데이터 처리 오류가 발생했습니다. A data processing error occurred.");
     }
     closeQrScannerModal();
@@ -1052,7 +1055,7 @@ function startQrScanner() {
     };
 
     const onScanFailure = (error) => {
-        console.warn(`Code scan error = ${error}`);
+        // console.warn(`Code scan error = ${error}`);
     };
 
     html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)

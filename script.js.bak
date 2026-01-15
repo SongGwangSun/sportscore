@@ -239,8 +239,17 @@ window.onVoiceError = function (error) {
 function onQrCodeScanned(qrData) {
     try {
         const newRecord = JSON.parse(qrData);
-        if (!newRecord || !newRecord.id) return alert("유효하지 않은 QR 코드입니다. This is an invalid QR code.");
-        if (gameHistory.some(record => record.id === newRecord.id)) return alert("이미 존재하는 기록입니다.This is a record that already exists.");
+        console.log('QR : ' + qrData);
+        if (!newRecord || !newRecord.id) {
+            alert("유효하지 않은 QR 코드입니다. This is an invalid QR code.");
+            closeQrScannerModal();
+            return ;
+        }
+        if (gameHistory.some(record => record.id === newRecord.id)) {
+            alert("이미 존재하는 기록입니다.This is a record that already exists.");
+            closeQrScannerModal();
+            return ;
+        }
 
         // 선수 자동 추가 로직 (데이터 무결성 및 다운 방지)
         const checkAndAdd = (name) => {
@@ -248,16 +257,23 @@ function onQrCodeScanned(qrData) {
                 players.push({ name: name, wins: 0, losses: 0, history: [] });
             }
         };
+
         checkAndAdd(newRecord.player1Name);
+        // console.log('checkAndAdd 1: ' + newRecord.player1Name);
+
         checkAndAdd(newRecord.player2Name);
+        // console.log('checkAndAdd 2: ' + newRecord.player2Name);
         updateStorageAndRender();
+        console.log('updateStorageAndRender');
 
         gameHistory.unshift(newRecord);
         saveHistory();
+        console.log('saveHistory');
         renderHistoryList();
+        console.log('renderHistoryList');
         alert("경기 기록을 성공적으로 가져왔습니다. Match records were successfully imported.");
     } catch (e) {
-        console.error(e);
+        console.error(e.Error || e.message || e);
         alert("데이터 처리 오류가 발생했습니다. A data processing error occurred.");
     }
     closeQrScannerModal();
@@ -1044,7 +1060,7 @@ function startQrScanner() {
     };
 
     const onScanFailure = (error) => {
-        // console.warn(`Code scan error = ${error}`);
+        console.warn(`Code scan error = ${error}`);
     };
 
     html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
@@ -1325,7 +1341,7 @@ function saveReviewedVideo() {
     } else if (gameState.lastRecordedBlob) {
         blob = gameState.lastRecordedBlob;
     } else {
-        alert("저장할 녹화 데이터가 없습니다.");
+        alert("저장할 녹화 데이터가 없습니다. There is no recording data to save.");
         // close whichever video modal (end-game or in-game) is active
         closeActiveVideoModal();
         return;
@@ -1462,7 +1478,7 @@ function saveReviewedVideo() {
     };
 
     reader.onerror = () => {
-        alert("파일을 읽는 데 실패했습니다.");
+        alert("파일을 읽는 데 실패했습니다. Failed to read file.");
         closeReviewModal();
     };
 }
@@ -1818,12 +1834,15 @@ function renderHistoryList() {
             if (record.setScores && Array.isArray(record.setScores)) {
                 setsHtml = '<div class="set-scores-container">';
                 record.setScores.forEach((set, i) => {
-                if (setCount > i) {
-                    if (i + 1 === setCount)
-                        setsHtml += `<span>Set ${i + 1}: ${set.p1} - ${set.p2}  </span>`;
-                    else
-                        setsHtml += `<span>Set ${i + 1}: ${set.p1} - ${set.p2} / </span>`;
-                }
+                  setsHtml += `<span> [ ${set.p1} - ${set.p2} ] </span>`;
+//                if (setCount > i) {
+//                    if (i + 1 === setCount)
+////                        setsHtml += `<span> ${i + 1}[ ${set.p1} - ${set.p2} ] </span>`;
+//                        setsHtml += `<span> [ ${set.p1} - ${set.p2} ] </span>`;
+//                    else
+////                        setsHtml += `<span> ${i + 1}[ ${set.p1} - ${set.p2} ] ,</span>`;
+//                        setsHtml += `<span> [ ${set.p1} - ${set.p2} ] </span>`;
+//                }
                 });
                 setsHtml += '</div>';
             }
