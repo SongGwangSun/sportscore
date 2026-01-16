@@ -1,0 +1,26 @@
+{
+    "id": 1767953987693,
+    "game": "pickleball",
+    "date": "2026-01-09T10:20:01.482Z",
+    "player1Name": "Player 2",
+    "player2Name": "Player 1",
+    "player1Sets": 0,
+    "player2Sets": 2,
+    "setScores": [
+        {
+            "p1": 11,
+            "p2": 2
+        },
+        {
+            "p1": 0,
+            "p2": 11
+        },
+        {
+            "p1": 0,
+            "p2": 11
+        }
+    ],
+    "memo": "",
+    "winner": "Player 1",
+    "videoUrl": null
+}
