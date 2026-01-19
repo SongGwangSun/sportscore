@@ -944,7 +944,7 @@ async function startGame() {
     gameState.currentSet = 1;
     gameState.player1Sets = 0;
     gameState.player2Sets = 0;
-    document.getElementById('gameNameDisplay').textContent = gameRules[gameState.selectedGame].title.replace(' 규칙', '');
+    document.getElementById('gameNameDisplay').textContent = gameRules[gameState.selectedGame].title.replace(' 규칙','');
     gameState.gameStartTime = Date.now();
     if (timeUpdateInterval) clearInterval(timeUpdateInterval);
     timeUpdateInterval = setInterval(updateTimeDisplays, 1000);
@@ -2166,109 +2166,138 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function showPlayerStats(playerName) {
-   // 1. 해당 플레이어의 전체 경기 추출 및 날짜순 정렬
-       const allPlayerMatches = gameHistory.filter(r => r.pn1 === playerName || r.pn2 === playerName)
-                                           .sort((a, b) => new Date(a.date) - new Date(b.date));
+    // gather matches involving this player
+    const matches = gameHistory.filter(r => r.pn1 === playerName || r.pn2 === playerName).slice().sort((a, b) => new Date(a.date) - new Date(b.date));
+    const labels = [];
+    const playerSets = [];
+    const opponentSets = [];
+    let wins = 0, losses = 0;
+    matches.forEach(m => {
+        const d = new Date(m.date);
+        labels.push(d.toLocaleDateString());
+        const isP1 = m.pn1 === playerName;
+        const pSets = isP1 ? m.ps1 : m.ps2;
+        const oSets = isP1 ? m.ps2 : m.ps1;
+        playerSets.push(pSets);
+        opponentSets.push(oSets);
+        if (pSets > oSets) wins++; else losses++;
+    });
 
-       if (allPlayerMatches.length === 0) {
-           document.getElementById('playerStatsSummary').textContent = '기록이 없습니다.';
-           return;
-       }
+    document.getElementById('playerStatsHeader').textContent = `${playerName} — ${matches.length}경기 (${wins}승 ${losses}패)`;
+    document.getElementById('playerStatsSummary').textContent = matches.length ? `최근 경기: ${labels[labels.length - 1]} | 승률: ${((wins / (wins + losses || 1)) * 100).toFixed(1)}%` : '기록이 없습니다.';
 
-       // 2. 데이터가 있는 날짜 중 고유 날짜(Unique Dates) 최신 7개 추출
-       const uniqueDates = [...new Set(allPlayerMatches.map(m => new Date(m.date).toISOString().slice(0, 10)))];
-       const dateKeys = uniqueDates.slice(-7); // 가장 최근 7개 날짜만 선택
-       const dateLabels = dateKeys;
+    // create horizontal stacked bar per-date for the recent 30 days, with sport/color-coded win/loss segments
+    const ctx = document.getElementById('playerScoreChart').getContext('2d');
+    if (_playerScoreChart) _playerScoreChart.destroy();
 
-       // 3. 종목 및 컬러 설정
-       const sportKeys = Object.keys(sportPresets);
-       const sportLabels = sportKeys.map(k => (gameRules[k] && gameRules[k].title) ? gameRules[k].title.replace(' 규칙', '') : k);
-       const colorMap = {
-           badminton: { win: '#4CAF50', loss: '#F44336' },
-           pingpong: { win: '#00BCD4', loss: '#E91E63' },
-           jokgu: { win: '#2196F3', loss: '#FF9800' },
-           pickleball: { win: '#9C27B0', loss: '#FFC107' }
-       };
+    // build recent 7-day labels (YYYY-MM-DD)
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 7);
+    const dateKeys = [];
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        dateKeys.push(new Date(d).toISOString().slice(0, 10));
+    }
+    const dateLabels = dateKeys.map(k => k); // use ISO date labels; UI can be adjusted if needed
 
-       // 4. 데이터 집계 (선택된 7개 날짜 기준)
-       const winsBySportDate = {};
-       const lossesBySportDate = {};
-       sportKeys.forEach(k => {
-           winsBySportDate[k] = dateKeys.map(() => 0);
-           lossesBySportDate[k] = dateKeys.map(() => 0);
-       });
+    // sports and colors (sport color used as border; wins are green, losses are gray)
+    const sportKeys = Object.keys(sportPresets);
+    const sportLabels = sportKeys.map(k => (gameRules[k] && gameRules[k].title) ? gameRules[k].title.replace(' 규칙', '') : k);
+    const sportColors = { badminton: '#2e7d32', pingpong: '#ff9800', jokgu: '#1976d2', pickleball: '#8e24aa' };
 
-       let maxVal = 0;
-       allPlayerMatches.forEach(m => {
-           const key = new Date(m.date).toISOString().slice(0, 10);
-           const di = dateKeys.indexOf(key);
-           if (di === -1) return; // 최신 7개 날짜에 포함되지 않으면 패스
+    // initialize per-sport per-date counts
+    const winsBySportDate = {};
+    const lossesBySportDate = {};
+    sportKeys.forEach(k => { winsBySportDate[k] = dateKeys.map(() => 0); lossesBySportDate[k] = dateKeys.map(() => 0); });
 
-           const isP1 = m.pn1 === playerName;
-           const pSets = isP1 ? m.ps1 : m.ps2;
-           const oSets = isP1 ? m.ps2 : m.ps1;
+    // aggregate gameHistory entries that fall within dateKeys
+    gameHistory.forEach(m => {
+        if (!m || !m.date) return;
+        const key = new Date(m.date).toISOString().slice(0, 10);
+        const di = dateKeys.indexOf(key);
+        if (di === -1) return; // outside range
+        if (!(sportKeys.includes(m.game))) return;
+        const isP1 = m.pn1 === playerName;
+        if(isP1 === false && m.pn2 !== playerName) return; // not involving this player
+        const pSets = isP1 ? m.ps1 : m.ps2;
+        const oSets = isP1 ? m.ps2 : m.ps1;
+        if (pSets > oSets) winsBySportDate[m.game][di]++; else lossesBySportDate[m.game][di]++;
+    });
 
-           if (pSets > oSets) winsBySportDate[m.game][di]++;
-           else lossesBySportDate[m.game][di]++;
-       });
+    // build datasets: for each sport add Wins (positive) and Losses (negative) so wins appear above and losses below
+    const colorMap = {
+        badminton: { win: '#4CAF50', loss: '#F44336' },
+        pingpong: { win: '#00BCD4', loss: '#E91E63' },
+        jokgu: { win: '#2196F3', loss: '#FF9800' },
+        pickleball: { win: '#9C27B0', loss: '#FFC107' }
+    };
 
-       // 5. 데이터셋 빌드 및 Y축 Max 계산
-       const datasets = [];
-       sportKeys.forEach((k, idx) => {
-           const wData = winsBySportDate[k];
-           const lData = lossesBySportDate[k];
+    const datasets = [];
+    let maxVal = 0;
+    sportKeys.forEach((k, idx) => {
+        const winsData = winsBySportDate[k] || dateKeys.map(() => 0);
+        const lossesData = lossesBySportDate[k] || dateKeys.map(() => 0);
+        // track max for scale
+        // winsData.forEach(v => { if (v > maxVal) maxVal = v; });
+        // lossesData.forEach(v => { if (v > maxVal) maxVal = v; });
+        // maxVal 계산 (양수만)
+        [...winsData, ...lossesData].forEach(v => {
+            if (v > maxVal) maxVal = v;
+        });
+        datasets.push({
+            label: `${sportLabels[idx]} (Wins)`,
+            data: winsData,
+            backgroundColor: colorMap[k]?.win || '#4CAF50',
+            borderColor: colorMap[k]?.win || '#4CAF50',
+            borderWidth: 1,
+            stack: `stack-${k}`
+        });
 
-           // 날짜별 stack 합계 중 최대값 찾기 (Y축 스케일용)
-           dateKeys.forEach((_, dIdx) => {
-               let dailyTotal = 0;
-               sportKeys.forEach(s => { dailyTotal += (winsBySportDate[s][dIdx] + lossesBySportDate[s][dIdx]); });
-               if (dailyTotal > maxVal) maxVal = dailyTotal;
-           });
+        datasets.push({
+            label: `${sportLabels[idx]} (Losses)`,
+            data: lossesData, //lossesData.map(v => -v), // negative to show below axis
+            backgroundColor: colorMap[k]?.loss || '#9e9e9e',
+            borderColor: colorMap[k]?.loss || '#9e9e9e',
+            borderWidth: 1,
+            stack: `stack-${k}`
+        });
+    });
 
-           datasets.push({
-               label: `${sportLabels[idx]} (승)`,
-               data: wData,
-               backgroundColor: colorMap[k]?.win,
-               stack: 'Stack 0' // 모든 종목을 하나의 바에 쌓음
-           });
-           datasets.push({
-               label: `${sportLabels[idx]} (패)`,
-               data: lData,
-               backgroundColor: colorMap[k]?.loss,
-               stack: 'Stack 0'
-           });
-       });
-
-       // Y축 설정: 최소 10, 그 이상이면 maxVal + 1 (정수 단위)
-       const finalMax = Math.max(10, Math.ceil(maxVal + 1));
-
-       // 6. 차트 생성
-       const ctx = document.getElementById('playerScoreChart').getContext('2d');
-       if (_playerScoreChart) _playerScoreChart.destroy();
-
-       _playerScoreChart = new Chart(ctx, {
-           type: 'bar',
-           data: { labels: dateLabels, datasets },
-           options: {
-               responsive: true,
-               scales: {
-                   x: { stacked: true },
-                   y: {
-                       stacked: true,
-                       beginAtZero: true,
-                       min: 0,
-                       max: finalMax,
-                       ticks: {
-                           stepSize: 1,    // 1씩 증가
-                           precision: 0    // 소수점 제거
-                       }
-                   }
-               },
-               plugins: {
-                   legend: { display: false }
-               }
-           }
-       });
+    // determine symmetric scale limits
+    // const suggestedMax = Math.max(1, Math.ceil(maxVal / 1.1));
+    // 최소 1, 최대 10으로 범위를 제한 (소수점은 Math.ceil로 이미 제거됨)
+const suggestedMax = Math.min(10, Math.max(1, Math.ceil(maxVal / 1.1)));
+    
+    _playerScoreChart = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: dateLabels, datasets },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            // show absolute value and sport/date
+                            // const raw = context.raw ?? context.parsed.y ?? context.parsed;
+                            // const val = Math.abs(raw);
+                            // return `${context.dataset.label}: ${val}`;
+                            const val = context.raw ?? context.parsed.y ?? 0;
+                            return `${context.dataset.label}: ${val}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: { stacked: true },
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    max: suggestedMax  // 최대값 제한
+                }
+            }
+        }
+    });
 
     // render color-key table into playerStatsSummary (append to existing summary text)
     const colorTableRows = sportKeys.map(k => {
@@ -2307,7 +2336,7 @@ function showPlayerStats(playerName) {
             const oSets = isP1 ? m.ps2 : m.ps1;
             if (pSets > oSets) w++;
         });
-        return Math.round((w / total) * 10); // percent (0-100)
+        return Math.round((w / total) * 100); // percent (0-100)
     });
 
     _playerWinChart = new Chart(ctx2, {
