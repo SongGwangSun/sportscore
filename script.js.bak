@@ -105,8 +105,8 @@ let gameState = {
     player1Sets: 0,
     player2Sets: 0,
     setScores: [],
-    pn1: 'Player 1',
-    pn2: 'Player 2',
+    pn1: 'Blue Team',
+    pn2: 'Red Team',
     scoreHistory: [],
     gameStartTime: null,
     isRecording: false,
@@ -138,7 +138,7 @@ let ServerCount = 1;    // 피클볼 서브 규칙 (처음만 1인 서브 교체
 
 const koreascoreVoice = ["영", "일", "이", "삼", "사", "오", "육", "칠", "팔", "구", "십", "십일", "십이", "십삼", "십사", "십오", "십육", "십칠", "십팔", "십구", "이십", "이십일", "이십이", "이십삼", "이십사", "이십오", "이십육", "이십칠", "이십팔", "이십구", "삼십"]; // 한국 점수
 
-const gametitle = ["배드민턴", "탁구", "족구", "피클볼"];
+const gametitle = ["배드민턴(Badminton)", "탁구(TableTennis)", "족구(Jokgu)", "피클볼(PickleBall)"];
 
 const gameRules = {
     badminton: { title: "배드민턴(Badminton) 규칙", image: "images/badminton.webp", description: `<h3>서브<br><span class="eng-text">Service</span></h3><p>    서브는 대각선 방향으로 넣어야 하며, 네트에 걸리지 않고 상대방 코트의 서비스 라인 안에 떨어져야 합니다.<br><span class="eng-text">The service must be delivered diagonally and must land within the opponent's service court without hitting the net.</span></p><h3>점수<br><span class="eng-text">Scoring</span></h3><ul><li>      모든 랠리에서 점수를 얻는 랠리포인트 시스템입니다.<br><span class="eng-text">It is a rally point system where a point is awarded for every rally won.</span>    </li>    <li>      한 게임은 21점을 먼저 얻는 쪽이 승리합니다.<br>      <span class="eng-text">A game is won by the side that first scores 21 points.</span>    </li>    <li>      20-20 동점(듀스)일 경우, 2점 차이가 날 때까지 경기를 계속합니다.<br>      <span class="eng-text">In case of a 20-20 tie (deuce), the game continues until one side has a 2-point lead.</span>    </li>  </ul>` },
@@ -241,32 +241,32 @@ window.onVoiceError = function (error) {
 
 // Safe UTF-8 Base64 conversion for Korean support
 function utf8_to_b64(str) {
-    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function (match, p1) {
         return String.fromCharCode('0x' + p1);
     }));
 }
 
 function b64_to_utf8(str) {
-    return decodeURIComponent(atob(str).split('').map(function(c) {
+    return decodeURIComponent(atob(str).split('').map(function (c) {
         return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
     }).join(''));
 }
 
 function onQrCodeScanned(qrData) {
     try {
-        const decodedData = decodeURIComponent(escape(atob(qrData)));
-        const newRecord = JSON.parse(decodedData);
+        const decoded = b64_to_utf8(qrData);
+        const newRecord = JSON.parse(decoded);
 
         console.log('QR : ' + newRecord);
         if (!newRecord || !newRecord.id) {
             alert("유효하지 않은 QR 코드입니다. This is an invalid QR code.");
             closeQrScannerModal();
-            return ;
+            return;
         }
         if (gameHistory.some(record => record.id === newRecord.id)) {
             alert("이미 존재하는 기록입니다.This is a record that already exists.");
             closeQrScannerModal();
-            return ;
+            return;
         }
         console.log('checkAndAdd 1: ' + newRecord.pn1);
         // 선수 자동 추가 로직 (데이터 무결성 및 다운 방지)
@@ -297,6 +297,22 @@ function onQrCodeScanned(qrData) {
     closeQrScannerModal();
 };
 
+function shareHistoryEntry(id) {
+    const r = gameHistory.find(h => h.id.toString() === id.toString());
+    if (!r) return;
+
+    try {
+        const container = document.getElementById('qrcode');
+        container.innerHTML = "";
+        const qr = qrcode(0, 'Q');
+        qr.addData(utf8_to_b64(JSON.stringify(r)));
+        qr.make();
+        container.innerHTML = qr.createImgTag(5, 0);  // Cell size, high space
+        document.getElementById('qrCodeModal').classList.add('active');
+    } catch (e) {
+        alert("QR 생성 실패: 데이터가 너무 많습니다.");
+    }
+}
 
 // --- 2. DATA PERSISTENCE ---
 /** 선수 저장 (추가 및 수정) */
@@ -619,9 +635,9 @@ function showGameSettings() {
     const gameTitle = gameRules[gameId]?.title.replace(' 규칙', '') || '게임';
     document.getElementById('selectedGameTitle').textContent = `${gameTitle} 설정`;
     const last = gameHistory[0];
-    document.getElementById('playerReg1').value = last ? last.pn1 : "Player 1";
-    document.getElementById('playerReg2').value = last ? last.pn2 : "Player 2";
-    
+    document.getElementById('playerReg1').value = last ? last.pn1 : "Blue Team";
+    document.getElementById('playerReg2').value = last ? last.pn2 : "Red Team";
+
     updateMatchTypeVisibility(gameId);
     setSportMode(gameId);
     showScreen('gameSettings');
@@ -656,9 +672,9 @@ function updateScoreboard() {
 function updateServeColor() { const s1 = document.getElementById('score1'); const s2 = document.getElementById('score2'); s1.classList.remove('serve'); s2.classList.remove('serve'); if (gameState.currentServer === 1) s1.classList.add('serve'); else s2.classList.add('serve'); }
 
 function showEndScreen(winner) {
-    console.log('showEndScreen: start.');
+    //console.log('showEndScreen: start.');
     const gameEndScreen = document.getElementById('gameEnd');
-    gameState.setScores.push({ p1: gameState.player1Score, p2: gameState.player2Score });
+    // gameState.setScores.push({ p1: gameState.player1Score, p2: gameState.player2Score });
     if (winner === 1) {
         updatePlayerStats(gameState.pn1, true, gameState.pn2, gameState.player1Score, gameState.player2Score)
         updatePlayerStats(gameState.pn2, false, gameState.pn2, gameState.player1Score, gameState.player2Score)
@@ -680,8 +696,8 @@ function showEndScreen(winner) {
         date: new Date().toISOString(),
         pn1: gameState.pn1,
         pn2: gameState.pn2,
-        player1Sets: gameState.player1Sets,
-        player2Sets: gameState.player2Sets,
+        ps1: gameState.player1Sets,
+        ps2: gameState.player2Sets,
         setScores: gameState.setScores,
         memo: gameState.setMemo,
         winner: winnerName,
@@ -691,6 +707,7 @@ function showEndScreen(winner) {
     if (existingRecordIndex > -1) gameHistory[existingRecordIndex] = newRecord;
     else gameHistory.unshift(newRecord);
     saveHistory();
+
     if (mediaRecorder && mediaRecorder.state === "recording") {
         isGameOverStop = true;
         mediaRecorder.stop();
@@ -770,8 +787,7 @@ function updateMatchTypeVisibility(game) {
 }
 function updateTimeDisplays() { const now = new Date(); document.getElementById('currentTimeDisplay').textContent = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`; if (gameState.gameStartTime) { const elapsed = Math.floor((Date.now() - gameState.gameStartTime) / 1000); const h = String(Math.floor(elapsed / 3600)).padStart(2, '0'); const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0'); const s = String(elapsed % 60).padStart(2, '0'); document.getElementById('elapsedTimeDisplay').textContent = `${h}:${m}:${s}`; } }
 // --- 4. CORE GAME LOGIC ---
-function handleRallyWonBy(player)
-{
+function handleRallyWonBy(player) {
     const Prev1 = gameState.player1Score;
     const Prev2 = gameState.player2Score;
 
@@ -811,8 +827,7 @@ function handleRallyWonBy(player)
                     }
                 }
             }
-            else
-            {
+            else {
                 if (player !== gameState.currentServer) {
                     gameState.player1Score = Prev1;
                     gameState.player2Score = Prev2;
@@ -850,7 +865,7 @@ function checkSetWin() {
             notifyCourtChange();
             gameState.midSetCourtChanged = true;
         }
-    }    
+    }
 }
 
 function checkGameWin() { const setsToWin = Math.ceil(gameState.totalSets / 2); if (gameState.player1Sets >= setsToWin) { showEndScreen(1); return true; } if (gameState.player2Sets >= setsToWin) { showEndScreen(2); return true; } return false; }
@@ -873,6 +888,7 @@ function checkAutoCourtChange() {
         gameState.midSetCourtChanged = true;
     }
 }
+
 function notifyServeChange() { speakNarration('serveChange'); const notification = document.getElementById('gameNotification'); if (notification) { notification.textContent = "서브권 변경\nChange serve"; notification.classList.add('show'); setTimeout(() => notification.classList.remove('show'), 1500); } }
 function notifyCourtChange() { speakNarration('courtChange'); const notification = document.getElementById('gameNotification'); if (notification) { notification.textContent = "코트 변경\nChange courts!"; notification.classList.add('show'); setTimeout(() => notification.classList.remove('show'), 1500); } }
 
@@ -881,7 +897,7 @@ async function startGame() {
     gameState.currentGameId = Date.now();
     gameState.winScore = parseInt(document.getElementById('winScoreRange').value, 10);
     gameState.totalSets = parseInt(document.getElementById('totalSetsRange').value, 10);
-    gameState.setMemo = document.getElementById('setMemoInput').value;
+    gameState.setMemo = (document.getElementById('setMemoInput').value || "").substring(0, 40);
     gameState.setScores = [];
     applyPlayerNames();
 
@@ -974,7 +990,7 @@ function showGameSelection() {
 }
 
 // --- 6. SPEECH, CAMERA, MODALS, etc. ---
-const narrations = { 'ko-KR': { gameStart: "게임 시작", setReset: "세트 리셋", courtSwap: "코트 교체", player1SetWin: "1번 선수 세트", player2SetWin: "2번 선수 세트", undo: "실수 수정", serveChange: "서브 교체", courtChange: "코트 체인지" }, 'en-US': { gameStart: "Game start", setReset: "Set reset", courtSwap: "Switching sides", player1SetWin: "Player 1 wins the set", player2SetWin: "Player 2 wins the set", undo: "Undo", serveChange: "Serve change", courtChange: "Court change" } };
+const narrations = { 'ko-KR': { gameStart: "게임 시작", setReset: "세트 리셋", courtSwap: "코트 교체", player1SetWin: "1번 선수 세트", player2SetWin: "2번 선수 세트", undo: "실수 수정", serveChange: "서브 교체", courtChange: "코트 체인지" }, 'en-US': { gameStart: "Game start", setReset: "Set reset", courtSwap: "Switching sides", player1SetWin: "BlueTeam wins the set", player2SetWin: "RedTeam wins the set", undo: "Undo", serveChange: "Serve change", courtChange: "Court change" } };
 function populateVoiceList() { const vSelect = document.getElementById('voiceSelect'); if (!vSelect || !window.speechSynthesis) return; voicesList = speechSynthesis.getVoices(); vSelect.innerHTML = ''; const langFilter = document.getElementById('voiceLangSelect').value; voicesList.filter(v => v.lang === langFilter).forEach(v => { const opt = document.createElement('option'); opt.textContent = v.name; opt.value = v.name; vSelect.appendChild(opt); }); vSelect.value = gameState.voiceName; }
 function speakPreview() { speakScore(gameState.selectedLang === 'ko-KR' ? "스포츠 점수판" : "Sport score", true); }
 function speakScore(text, isPreview = false) {
@@ -1033,26 +1049,6 @@ function speakCurrentScore() {
 function toggleCamera() { const camView = document.getElementById('cameraView'); if (camView.style.display === 'block') stopCamera(); else startCamera(); }
 
 // --- QR Code Functions ---
-function shareHistoryEntry(recordId) {
-    const record = gameHistory.find(r => r.id.toString() === recordId.toString());
-    if (!record) return;
-
-    const qrCodeData = JSON.stringify(record);
-    const qrcodeContainer = document.getElementById('qrcode');
-    qrcodeContainer.innerHTML = ''; // 기존 QR 코드 삭제
-
-    try {
-        const qr = qrcode(0, 'L');
-        qr.addData(qrCodeData);
-        qr.make();
-        qrcodeContainer.innerHTML = qr.createImgTag(5, 0); // size: 6, margin: 10
-        document.getElementById('qrCodeModal').classList.add('active');
-    } catch (e) {
-        console.error('QR Code generation failed:', e);
-        alert("QR 코드를 생성하는 데 실패했습니다.");
-    }
-}
-
 function closeQrCodeModal() {
     document.getElementById('qrCodeModal').classList.remove('active');
 }
@@ -1078,7 +1074,7 @@ function startQrScanner() {
     };
 
     const onScanFailure = (error) => {
-        console.warn(`Code scan error = ${error}`);
+        // console.warn(`Code scan error = ${error}`);
     };
 
     html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
@@ -1398,7 +1394,7 @@ function saveReviewedVideo() {
                             (async () => {
                                 const saved = await saveBlobToIDB(gameState.currentGameId, blob);
                                 if (saved) {
-        // songgs video save handled natively on Android side; no need to update gameHistory here
+                                    // songgs video save handled natively on Android side; no need to update gameHistory here
                                     // gameHistory[idx].videoUrl = `indexed:${gameState.currentGameId}`;
                                     // saveHistory();
                                     logTest && typeof logTest === 'function' && logTest('비디오 데이터가 IndexedDB에 저장되었습니다: ' + gameState.currentGameId);
@@ -1417,7 +1413,7 @@ function saveReviewedVideo() {
                             alert('비디오 파일 저장 실패. 다운로드 파일을 확인하세요.');
                         }
                     } else {
-        // songgs video save handled natively on Android side; no need to update gameHistory here
+                        // songgs video save handled natively on Android side; no need to update gameHistory here
                         // gameHistory[idx].videoUrl = dataUrl;
                         // saveHistory();
                         logTest && typeof logTest === 'function' && logTest('게임 기록에 비디오 데이터 저장됨: ' + gameState.currentGameId);
@@ -1787,8 +1783,8 @@ function applyPlayerNames() {
     const p2Name = document.getElementById('playerReg2').value.trim();
 
     // 1. 현재 진행될 게임 상태(gameState)에 이름 반영
-    gameState.pn1 = p1Name || 'Player 1';
-    gameState.pn2 = p2Name || 'Player 2';
+    gameState.pn1 = p1Name || 'BlueTeam';
+    gameState.pn2 = p2Name || 'RedTeam';
 
     // 2. 선수 명단(players) 업데이트 로직
     [p1Name, p2Name].forEach(name => {
@@ -1814,6 +1810,7 @@ function applyPlayerNames() {
 
 function clearHistory() { if (confirm('모든 기록을 삭제하시겠습니까?\nDo you want to delete all records?')) { gameHistory = []; saveHistory(); renderHistoryList(); } }
 
+// --- 6. LIST & INIT ---
 function renderHistoryList() {
     const listEl = document.getElementById('historyList');
     listEl.innerHTML = '';
@@ -1846,21 +1843,22 @@ function renderHistoryList() {
             const item = document.createElement('div');
             item.className = 'history-item';
             const gameTitle = gameRules[record.game]?.title.replace(' 규칙', '') || record.game;
+            // const gameTitle = gametitle[record.game];
 
             let setsHtml = '';
-            let setCount = record.player1Sets + record.player2Sets;
+            // let setCount = record.player1Sets + record.player2Sets;
             if (record.setScores && Array.isArray(record.setScores)) {
                 setsHtml = '<div class="set-scores-container">';
                 record.setScores.forEach((set, i) => {
-                  setsHtml += `<span> [ ${set.p1} - ${set.p2} ] </span>`;
-//                if (setCount > i) {
-//                    if (i + 1 === setCount)
-////                        setsHtml += `<span> ${i + 1}[ ${set.p1} - ${set.p2} ] </span>`;
-//                        setsHtml += `<span> [ ${set.p1} - ${set.p2} ] </span>`;
-//                    else
-////                        setsHtml += `<span> ${i + 1}[ ${set.p1} - ${set.p2} ] ,</span>`;
-//                        setsHtml += `<span> [ ${set.p1} - ${set.p2} ] </span>`;
-//                }
+                    setsHtml += `<span> [ ${set.p1} - ${set.p2} ] </span>`;
+                    //                if (setCount > i) {
+                    //                    if (i + 1 === setCount)
+                    ////                        setsHtml += `<span> ${i + 1}[ ${set.p1} - ${set.p2} ] </span>`;
+                    //                        setsHtml += `<span> [ ${set.p1} - ${set.p2} ] </span>`;
+                    //                    else
+                    ////                        setsHtml += `<span> ${i + 1}[ ${set.p1} - ${set.p2} ] ,</span>`;
+                    //                        setsHtml += `<span> [ ${set.p1} - ${set.p2} ] </span>`;
+                    //                }
                 });
                 setsHtml += '</div>';
             }
@@ -1875,7 +1873,7 @@ function renderHistoryList() {
                 <div class="history-item-body">
                     <p class="players">
                         <span class="winner">${record.winner === record.pn1 ? '👑' : ''} ${record.pn1}</span> 
-                        <span class="score">${record.player1Sets} - ${record.player2Sets}</span> 
+                        <span class="score">${record.ps1} - ${record.ps2}</span> 
                         <span class="loser">${record.winner === record.pn2 ? '👑' : ''} ${record.pn2}</span>
                     </p>
                      ${setsHtml}
@@ -1886,14 +1884,14 @@ function renderHistoryList() {
                 </div>
             `;
 
-//            const playBtn = item.querySelector('[data-videourl]');
-//            if (playBtn) {
-//                playBtn.addEventListener('click', (e) => {
-//                    e.stopPropagation();
-//                    playHistoryVideo(playBtn.dataset.videourl);
-//                });
-//            }
-            
+            //            const playBtn = item.querySelector('[data-videourl]');
+            //            if (playBtn) {
+            //                playBtn.addEventListener('click', (e) => {
+            //                    e.stopPropagation();
+            //                    playHistoryVideo(playBtn.dataset.videourl);
+            //                });
+            //            }
+
             const shareBtn = item.querySelector('.share-btn');
             if (shareBtn) {
                 shareBtn.addEventListener('click', (e) => {
@@ -1910,8 +1908,7 @@ function renderHistoryList() {
 }
 
 // --- 7. INITIALIZATION ---
-function initializeApp()
-{
+function initializeApp() {
     loadHistory();
     loadPlayers(); // 선수 데이터 로드 함수 (별도 구현 필요 시)
     renderPlayerList();
@@ -2179,8 +2176,8 @@ function showPlayerStats(playerName) {
         const d = new Date(m.date);
         labels.push(d.toLocaleDateString());
         const isP1 = m.pn1 === playerName;
-        const pSets = isP1 ? m.player1Sets : m.player2Sets;
-        const oSets = isP1 ? m.player2Sets : m.player1Sets;
+        const pSets = isP1 ? m.ps1 : m.ps2;
+        const oSets = isP1 ? m.ps2 : m.ps1;
         playerSets.push(pSets);
         opponentSets.push(oSets);
         if (pSets > oSets) wins++; else losses++;
@@ -2221,8 +2218,9 @@ function showPlayerStats(playerName) {
         if (di === -1) return; // outside range
         if (!(sportKeys.includes(m.game))) return;
         const isP1 = m.pn1 === playerName;
-        const pSets = isP1 ? m.player1Sets : m.player2Sets;
-        const oSets = isP1 ? m.player2Sets : m.player1Sets;
+        if (isP1 === false && m.pn2 !== playerName) return; // not involving this player
+        const pSets = isP1 ? m.ps1 : m.ps2;
+        const oSets = isP1 ? m.ps2 : m.ps1;
         if (pSets > oSets) winsBySportDate[m.game][di]++; else lossesBySportDate[m.game][di]++;
     });
 
@@ -2266,7 +2264,9 @@ function showPlayerStats(playerName) {
     });
 
     // determine symmetric scale limits
-    const suggestedMax = Math.max(1, Math.ceil(maxVal / 1.1));
+    // const suggestedMax = Math.max(1, Math.ceil(maxVal / 1.1));
+    // 최소 1, 최대 10으로 범위를 제한 (소수점은 Math.ceil로 이미 제거됨)
+    const suggestedMax = Math.min(10, Math.max(1, Math.ceil(maxVal / 1.1)));
 
     _playerScoreChart = new Chart(ctx, {
         type: 'bar',
@@ -2332,8 +2332,8 @@ function showPlayerStats(playerName) {
         let w = 0;
         matchesForSport.forEach(m => {
             const isP1 = m.pn1 === playerName;
-            const pSets = isP1 ? m.player1Sets : m.player2Sets;
-            const oSets = isP1 ? m.player2Sets : m.player1Sets;
+            const pSets = isP1 ? m.ps1 : m.ps2;
+            const oSets = isP1 ? m.ps2 : m.ps1;
             if (pSets > oSets) w++;
         });
         return Math.round((w / total) * 100); // percent (0-100)
