@@ -944,7 +944,7 @@ async function startGame() {
     gameState.currentSet = 1;
     gameState.player1Sets = 0;
     gameState.player2Sets = 0;
-    document.getElementById('gameNameDisplay').textContent = gameRules[gameState.selectedGame].title.replace(' 규칙', '');
+    document.getElementById('gameNameDisplay').textContent = gameRules[gameState.selectedGame].title.replace(' 규칙','');
     gameState.gameStartTime = Date.now();
     if (timeUpdateInterval) clearInterval(timeUpdateInterval);
     timeUpdateInterval = setInterval(updateTimeDisplays, 1000);
@@ -2218,7 +2218,7 @@ function showPlayerStats(playerName) {
         if (di === -1) return; // outside range
         if (!(sportKeys.includes(m.game))) return;
         const isP1 = m.pn1 === playerName;
-        if (isP1 === false && m.pn2 !== playerName) return; // not involving this player
+        if(isP1 === false && m.pn2 !== playerName) return; // not involving this player
         const pSets = isP1 ? m.ps1 : m.ps2;
         const oSets = isP1 ? m.ps2 : m.ps1;
         if (pSets > oSets) winsBySportDate[m.game][di]++; else lossesBySportDate[m.game][di]++;
@@ -2266,8 +2266,8 @@ function showPlayerStats(playerName) {
     // determine symmetric scale limits
     // const suggestedMax = Math.max(1, Math.ceil(maxVal / 1.1));
     // 최소 1, 최대 10으로 범위를 제한 (소수점은 Math.ceil로 이미 제거됨)
-    const suggestedMax = Math.min(10, Math.max(1, Math.ceil(maxVal / 1.1)));
-
+const suggestedMax = Math.min(10, Math.max(1, Math.ceil(maxVal / 1.1)));
+    
     _playerScoreChart = new Chart(ctx, {
         type: 'bar',
         data: { labels: dateLabels, datasets },
