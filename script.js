@@ -669,7 +669,28 @@ function updateScoreboard() {
     document.querySelector('#player2Score .player-name').textContent = gameState.pn2;
     updateServeColor();
 }
-function updateServeColor() { const s1 = document.getElementById('score1'); const s2 = document.getElementById('score2'); s1.classList.remove('serve'); s2.classList.remove('serve'); if (gameState.currentServer === 1) s1.classList.add('serve'); else s2.classList.add('serve'); }
+function updateServeColor() { 
+    const s1 = document.getElementById('score1'); 
+    const s2 = document.getElementById('score2'); 
+    s1.classList.remove('serve'); 
+    s2.classList.remove('serve'); 
+    if (gameState.currentServer === 1) s1.classList.add('serve'); 
+    else s2.classList.add('serve'); 
+}
+function updateTeamColor(isAuto = false) { 
+    const s1 = document.getElementById('pn1'); 
+    const s2 = document.getElementById('pn2'); 
+    s1.classList.remove('blue'); 
+    s2.classList.remove('red'); 
+    if (isAuto) {
+        s1.classList.add('blue'); 
+        s2.classList.add('red'); 
+    }
+    else{
+        s1.classList.add('red'); 
+        s2.classList.add('blue'); 
+    }
+}
 
 function showEndScreen(winner) {
     //console.log('showEndScreen: start.');
@@ -952,6 +973,7 @@ async function startGame() {
     updateTimeDisplays();
     showScreen('scoreboard');
     speakNarration('gameStart');
+    updateTeamColor(true);
 }
 
 // 안드로이드 TTS 호출 함수 (새로 추가)
@@ -975,6 +997,7 @@ function switchCourt(isAuto = false) {
         gameState.currentServer = gameState.currentServer == 1 ? 2 : 1;
         updateServeColor(); notifyCourtChange(); speakNarration('courtSwap');
     }
+    updateTeamColor();
 }
 function showGameSelection() {
     const gameEndScreen = document.getElementById('gameEnd');

@@ -309,6 +309,8 @@ input:checked + .slider:before { transform: translateX(22px); }
 .player-score:active { background-color: #e9ecef; }
 .player-info { text-align: center; margin-bottom: 0.5rem; }
 .player-name { font-size: 1.5rem; font-weight: 700; color: #212529; }
+.player-name.blue { font-size: 1.5rem; font-weight: 700; color: #2d0ddf; }
+.player-name.red { font-size: 1.5rem; font-weight: 700; color: #e11d48; }
 .set-score { font-size: 1rem; color: #6c757d; display: block; }
 .score-display { font-size: 10rem; font-weight: 900; color: #212529; line-height: 1; transition: color 0.2s; }
 .score-display.serve { color: #e11d48; }
