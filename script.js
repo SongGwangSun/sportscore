@@ -2191,8 +2191,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
 function showPlayerStats(playerName) {
    // 1. 해당 플레이어의 전체 경기 추출 및 날짜순 정렬
-       const allPlayerMatches = gameHistory.filter(r => r.pn1 === playerName || r.pn2 === playerName)
-                                           .sort((a, b) => new Date(a.date) - new Date(b.date));
+    //    const allPlayerMatches = gameHistory.filter(r => r.pn1 === playerName || r.pn2 === playerName)
+    //                                        .sort((a, b) => new Date(a.date) - new Date(b.date));
+    const allPlayerMatches = gameHistory
+        .filter(r => 
+            r.pn1?.includes(playerName) || r.pn2?.includes(playerName)
+        )
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
 
        if (allPlayerMatches.length === 0) {
            document.getElementById('playerStatsSummary').textContent = '기록이 없습니다.';
