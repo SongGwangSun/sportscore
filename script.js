@@ -2193,10 +2193,7 @@ function showPlayerStats(playerName) {
    // 1. 해당 플레이어의 전체 경기 추출 및 날짜순 정렬
     //    const allPlayerMatches = gameHistory.filter(r => r.pn1 === playerName || r.pn2 === playerName)
     //                                        .sort((a, b) => new Date(a.date) - new Date(b.date));
-    const allPlayerMatches = gameHistory
-        .filter(r => 
-            r.pn1?.includes(playerName) || r.pn2?.includes(playerName)
-        )
+    const allPlayerMatches = gameHistory.filter(r => r.pn1?.includes(playerName) || r.pn2?.includes(playerName))
         .sort((a, b) => new Date(a.date) - new Date(b.date));
 
        if (allPlayerMatches.length === 0) {
@@ -2323,12 +2320,10 @@ function showPlayerStats(playerName) {
     // reuse `sportKeys` declared above for the first chart
     const labelsRadar = sportKeys.map(k => (gameRules[k] && gameRules[k].title) ? gameRules[k].title.replace(' 규칙', '') : k);
     const gamesCounts = sportKeys.map(k => {
-        return gameHistory.filter(r => 
-    r.game === k && (r.pn1?.includes(playerName) || r.pn2?.includes(playerName))
-).length;
+        return gameHistory.filter(r =>  r.game === k && (r.pn1?.includes(playerName) || r.pn2?.includes(playerName))).length;
     });
     const winRates = sportKeys.map(k => {
-        const matchesForSport = gameHistory.filter(r => r.game === k && (r.pn1?.includes(playerName) || r.pn2?.includes(playerName));
+        const matchesForSport = gameHistory.filter(r => r.game === k && (r.pn1?.includes(playerName) || r.pn2?.includes(playerName)));
         const total = matchesForSport.length;
         if (!total) return 0;
         let w = 0;
