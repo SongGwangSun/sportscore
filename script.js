@@ -282,20 +282,20 @@ function onQrCodeScanned(qrData) {
         checkAndAdd(newRecord.pn2);
         // console.log('checkAndAdd 2: ' + newRecord.pn2);
         updateStorageAndRender();
-        console.log('updateStorageAndRender');
+//        console.log('updateStorageAndRender');
 
         gameHistory.unshift(newRecord);
         saveHistory();
-        console.log('saveHistory');
+//        console.log('saveHistory');
         renderHistoryList();
-        console.log('renderHistoryList');
+//        console.log('renderHistoryList');
         alert("경기 기록을 성공적으로 가져왔습니다. Match records were successfully imported.");
     } catch (e) {
         console.error(e);
         alert("데이터 처리 오류가 발생했습니다. A data processing error occurred.");
     }
     closeQrScannerModal();
-};
+}
 
 function shareHistoryEntry(id) {
     const r = gameHistory.find(h => h.id.toString() === id.toString());
@@ -682,6 +682,8 @@ function updateTeamColor(isAuto = false) {
     const s2 = document.getElementById('pn2'); 
     s1.classList.remove('blue'); 
     s2.classList.remove('red'); 
+    s1.classList.remove('red');
+    s2.classList.remove('blue');
     if (isAuto) {
         s1.classList.add('blue'); 
         s2.classList.add('red'); 
@@ -691,7 +693,6 @@ function updateTeamColor(isAuto = false) {
         s2.classList.add('blue'); 
     }
 }
-
 function showEndScreen(winner) {
     //console.log('showEndScreen: start.');
     const gameEndScreen = document.getElementById('gameEnd');
