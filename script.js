@@ -2233,7 +2233,7 @@ function showPlayerStats(playerName) {
            const di = dateKeys.indexOf(key);
            if (di === -1) return; // 최신 7개 날짜에 포함되지 않으면 패스
 
-           const isP1 = m.pn1 === playerName;
+           const isP1 = m.pn1?.includes(playerName);
            const pSets = isP1 ? m.ps1 : m.ps2;
            const oSets = isP1 ? m.ps2 : m.ps1;
 
@@ -2323,15 +2323,18 @@ function showPlayerStats(playerName) {
     // reuse `sportKeys` declared above for the first chart
     const labelsRadar = sportKeys.map(k => (gameRules[k] && gameRules[k].title) ? gameRules[k].title.replace(' 규칙', '') : k);
     const gamesCounts = sportKeys.map(k => {
-        return gameHistory.filter(r => r.game === k && (r.pn1 === playerName || r.pn2 === playerName)).length;
+        return gameHistory.filter(r => 
+    r.game === k && (r.pn1?.includes(playerName) || r.pn2?.includes(playerName))
+).length;
     });
     const winRates = sportKeys.map(k => {
-        const matchesForSport = gameHistory.filter(r => r.game === k && (r.pn1 === playerName || r.pn2 === playerName));
+        const matchesForSport = gameHistory.filter(r => r.game === k && (r.pn1?.includes(playerName) || r.pn2?.includes(playerName));
         const total = matchesForSport.length;
         if (!total) return 0;
         let w = 0;
         matchesForSport.forEach(m => {
-            const isP1 = m.pn1 === playerName;
+            const isP1 = m.pn1?.includes(playerName);
+            // const isP1 = m.pn1 === playerName;
             const pSets = isP1 ? m.ps1 : m.ps2;
             const oSets = isP1 ? m.ps2 : m.ps1;
             if (pSets > oSets) w++;
