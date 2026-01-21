@@ -254,8 +254,11 @@ function b64_to_utf8(str) {
 
 function onQrCodeScanned(qrData) {
     try {
-        const decoded = b64_to_utf8(qrData);
-        const newRecord = JSON.parse(decoded);
+        // const decoded = b64_to_utf8(qrData);
+        // const newRecord = JSON.parse(decoded);
+        const decompressedString = LZString.decompressFromBase64(qrData);
+        const newRecord = JSON.parse(decompressedString);
+        console.log("복원:", newRecord); // 원본과 동일
 
         console.log('QR : ' + newRecord);
         if (!newRecord || !newRecord.id) {
@@ -305,7 +308,16 @@ function shareHistoryEntry(id) {
         const container = document.getElementById('qrcode');
         container.innerHTML = "";
         const qr = qrcode(0, 'Q');
-        qr.addData(utf8_to_b64(JSON.stringify(r)));
+
+        const jsonString = JSON.stringify(r); // 문자열화 (예: ~100바이트)
+
+        const compressed = LZString.compressToBase64(jsonString);
+        console.log("압축 크기:", compressed.length); // 보통 50-70% 감소
+        console.log("압축 결과:", compressed);
+
+
+        qr.addData(compressed);
+        // qr.addData(utf8_to_b64(JSON.stringify(r)));
         qr.make();
         container.innerHTML = qr.createImgTag(5, 0);  // Cell size, high space
         document.getElementById('qrCodeModal').classList.add('active');
@@ -2191,8 +2203,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
 function showPlayerStats(playerName) {
    // 1. 해당 플레이어의 전체 경기 추출 및 날짜순 정렬
-    //    const allPlayerMatches = gameHistory.filter(r => r.pn1 === playerName || r.pn2 === playerName)
-    //                                        .sort((a, b) => new Date(a.date) - new Date(b.date));
     const allPlayerMatches = gameHistory.filter(r => r.pn1?.includes(playerName) || r.pn2?.includes(playerName))
         .sort((a, b) => new Date(a.date) - new Date(b.date));
 
