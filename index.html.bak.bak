@@ -178,7 +178,7 @@
     <div class="player-input-group blue-team">
         <label for="playerReg1">블루팀(BlueTeam)</label>
         <input type="text" id="playerReg1"
-               placeholder="블루팀(BlueTeam)" maxlength="20">
+               placeholder="블루팀(BlueTeam)">
         <button class="list-btn" onclick="openPlayerNamesPicker('playerReg1')">📖</button>
     </div>
 
@@ -186,7 +186,7 @@
     <div class="player-input-group red-team">
         <label for="playerReg2">레드팀(RedTeam)</label>
         <input type="text" id="playerReg2"
-               placeholder="레드팀(RedTeam)" maxlength="20">
+               placeholder="레드팀(RedTeam)">
         <button class="list-btn" onclick="openPlayerNamesPicker('playerReg2')">📖</button>
     </div>
             <button class="apply-btn" onclick="applyPlayerNames()">이름 적용(Apply name)</button>
@@ -196,7 +196,7 @@
             <div class="setting-item">
                 <label for="setMemoInput">경기 메모(match notes)</label>
                 <input type="text" id="setMemoInput" class="text-input-modern"
-                       placeholder="이번 경기에 대한 메모(Notes on this match)" maxlength="40">
+                       placeholder="이번 경기에 대한 메모(Notes on this match)">
             </div>
             <div class="setting-item">
                 <label for="voiceRecToggle">음성인식 사용(Use voice recognition)</label>
