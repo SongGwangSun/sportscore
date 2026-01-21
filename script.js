@@ -260,7 +260,6 @@ function onQrCodeScanned(qrData) {
         const newRecord = JSON.parse(decompressedString);
         console.log("복원:", newRecord); // 원본과 동일
 
-        console.log('QR : ' + newRecord);
         if (!newRecord || !newRecord.id) {
             alert("유효하지 않은 QR 코드입니다. This is an invalid QR code.");
             closeQrScannerModal();
