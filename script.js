@@ -319,7 +319,13 @@ function shareHistoryEntry(id) {
         qr.addData(compressed);
         // qr.addData(utf8_to_b64(JSON.stringify(r)));
         qr.make();
-        container.innerHTML = qr.createImgTag(5, 0);  // Cell size, high space
+        container.innerHTML = qr.createImgTag(5, 2);  // Cell size, high space
+        // 4. 중앙 정렬 및 반응형 보정 (중요)
+        const qrImg = container.querySelector('img');
+        qrImg.style.maxWidth = '100%';    // 부모 너비를 넘지 않도록
+        qrImg.style.height = 'auto';     // 비율 유지
+        qrImg.style.display = 'block';   // 인라인 여백 제거
+        qrImg.style.margin = '0 auto';   // 수평 중앙 정렬
         document.getElementById('qrCodeModal').classList.add('active');
     } catch (e) {
         alert("QR 생성 실패: 데이터가 너무 많습니다.");
