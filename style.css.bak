@@ -450,6 +450,8 @@ input:checked + .slider:before { transform: translateX(22px); }
     background-color: rgba(0, 0, 0, 0.6); /* 배경 어둡게 */
     align-items: center;    /* 수직 중앙 정렬 */
     justify-content: center; /* 수평 중앙 정렬 */
+    padding: 20px;          /* 화면 가장자리와 여유 공간 */
+    box-sizing: border-box; /* 패딩 포함 크기 계산 */
 }
 
 /* 2. 모달 컨텐츠: 내용물에 맞게 크기 조절 */

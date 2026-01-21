@@ -146,7 +146,7 @@
                     <span class="slider-value" id="winScoreValue">11</span>
                     <div class="slider-container">
                         <span class="slider-label-start">1</span>
-                        <input type="range" id="winScoreRange" min="1" max="25" value="11">
+                        <input type="range" id="winScoreRange" min="1" max="25" step="2" value="11">
                         <span class="slider-label-end">25</span>
                     </div>
                 </div>
@@ -369,7 +369,7 @@
     </div>
     <div class="end-buttons">
         <button class="end-btn" onclick="showGameSelection()">홈으로(Home)</button>
-        <button class="end-btn" onclick="showGameSettings()">새 게임(New Game)</button>
+        <button class="end-btn" onclick="showGameSettings()">새 게임<br>(New Game)</button>
     </div>
 </div>
 
@@ -516,7 +516,10 @@
     <div class="modal-content" style="text-align: center;">
         <h2 style="margin-top:0;">경기 기록 공유</h2>
         <div id="qrcode" style=" background: white; display: inline-block;"></div>
-        <p style="margin-top: 0rem;">QR코드를 다른 기기에서 스캔하여 경기 기록을 가져오세요.<br>Scan QR code to sync match data with another device.</p>
+        <p style="margin: 1rem 0; line-height: 1.5; font-size: 0.95rem; color: #555;">
+            QR코드를 다른 기기에서 스캔하여 경기 기록을 가져오세요.<br>
+            <span style="color: #888; font-size: 0.85rem;">Scan QR code to sync match data with another device.</span>
+        </p>
         <div class="modal-footer">
             <button class="modal-action" onclick="closeQrCodeModal()">닫기(Close)</button>
         </div>
