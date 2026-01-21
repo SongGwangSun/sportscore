@@ -307,9 +307,10 @@ function shareHistoryEntry(id) {
     try {
         const container = document.getElementById('qrcode');
         container.innerHTML = "";
-        const qr = qrcode(0, 'Q');
+        const qr = qrcode(0, 'M');
 
         const jsonString = JSON.stringify(r); // 문자열화 (예: ~100바이트)
+        console.log("원본 :", jsonString); // 보통 50-70% 감소
 
         const compressed = LZString.compressToBase64(jsonString);
         console.log("압축 크기:", compressed.length); // 보통 50-70% 감소
