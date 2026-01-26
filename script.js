@@ -693,15 +693,24 @@ function updateScoreboard() {
     document.querySelector('#player2Score .player-name').textContent = gameState.pn2;
     updateServeColor();
 }
-function updateServeColor() { 
-    const s1 = document.getElementById('score1'); 
-    const s2 = document.getElementById('score2'); 
-    s1.classList.remove('serve'); 
-    s2.classList.remove('serve'); 
-    if (gameState.currentServer === 1) s1.classList.add('serve'); 
-    else s2.classList.add('serve'); 
+//function updateServeColor() { const s1 = document.getElementById('score1'); const s2 = document.getElementById('score2'); s1.classList.remove('serve'); s2.classList.remove('serve'); if (gameState.currentServer === 1) s1.classList.add('serve'); else s2.classList.add('serve'); }
+// script.js 내 updateServeColor 함수 수정
+function updateServeColor() {
+    const p1Container = document.getElementById('player1Score');
+    const p2Container = document.getElementById('player2Score');
+
+    // 클래스 초기화
+    p1Container.classList.remove('serving');
+    p2Container.classList.remove('serving');
+
+    // 서브권자에 따른 클래스 추가
+    if (gameState.currentServer === 1) {
+        p1Container.classList.add('serving');
+    } else {
+        p2Container.classList.add('serving');
+    }
 }
-function updateTeamColor(isAuto = false) { 
+function updateTeamColor(isAuto = false) {
     const s1 = document.getElementById('pn1'); 
     const s2 = document.getElementById('pn2'); 
     s1.classList.remove('blue'); 

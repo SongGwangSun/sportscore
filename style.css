@@ -1,4 +1,8 @@
 /* General Body and Screen Styles */
+* {
+    box-sizing: border-box;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     background: #f0f2f5;
@@ -8,6 +12,7 @@ body {
     position: fixed;
     width: 100%;
     height: 100%;
+    margin: 0;
 }
 
 .screen {
@@ -21,6 +26,11 @@ body {
 
 .screen.active {
     display: flex !important;
+}
+
+/* Scoreboard screen should not scroll to keep top bar visible */
+#scoreboard.screen {
+    overflow: hidden !important;
 }
 
 /* --- Game End Screen --- */
@@ -179,16 +189,8 @@ body {
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
-.rule-display-image-wrapper {
-    width: 100%;
-    /* height를 좀 더 낮게 조정하거나 auto로 두고 내부 이미지에 맞춤 */
-    max-height: 300px;          /* 필요에 맞게 조정 */
-    background-color: #000;     /* 여백 부분 배경색 */
-    display: block;
-}
-
 .rule-display-image {
-    display: block;         /* 인라인 여백 제거 */
+    display: block;
     width: 100%;
     height: auto;           /* 비율 유지하면서 전체 보이게 */
     object-fit: contain;
@@ -290,8 +292,6 @@ body {
 
 .text-input-modern { width: 100%; padding: 0.75rem; background: #f8f9fa; border: 1px solid #ced4da; border-radius: 8px; margin-top: 0.5rem; cursor: pointer; }
 
-.text-input-modern { flex: 1; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 8px; margin-left: 1rem; }
-
 .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
 .switch input { opacity: 0; width: 0; height: 0; }
 .slider.round { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 28px; }
@@ -300,8 +300,9 @@ input:checked + .slider { background-color: #667eea; }
 input:checked + .slider:before { transform: translateX(22px); }
 
 .start-btn-modern { width: 100%; padding: 1rem; font-size: 1.2rem; font-weight: 700; color: #fff; background: #667eea; border: none; border-radius: 12px; cursor: pointer; margin-top: 1rem; }
-.start-btn-modern1 { width: 20%; padding: 1rem; font-size: 1.2rem; font-weight: 100; color: #fff; background: #667eea; border: none; border-radius: 12px; cursor: pointer; margin-top: 1rem; }
+.start-btn-modern1 { width: auto; padding: 8px 16px; font-size: 14px; color: #fff; background: #667eea; border: none; border-radius: 12px; cursor: pointer; }
 
+/* --- Scoreboard --- */
 #scoreboard { display: flex; flex-direction: column; width: 100%; height: 100%; background: #fff; position: relative; }
 .game-notification { visibility: hidden; opacity: 0; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.7); color: white; padding: 1rem 2rem; border-radius: 20px; font-size: 1.5rem; font-weight: bold; z-index: 2000; transition: visibility 0s, opacity 0.5s; }
 .game-notification.show { visibility: visible; opacity: 1; }
@@ -309,18 +310,48 @@ input:checked + .slider:before { transform: translateX(22px); }
 .scoreboard-top-bar { display: none; justify-content: space-between; align-items: center; padding: 0.5rem 1rem; background: #f8f9fa; border-bottom: 1px solid #dee2e6; flex-shrink: 0; }
 .game-info { display: flex; align-items: center; gap: 1rem; font-size: 0.9rem; font-weight: 600; color: #495057; }
 .scoreboard-main-controls { display: flex; align-items: center; gap: 0.5rem; }
-#recordStopButton { display: none; }
 
-.scoreboard-main-area { display: flex; flex-grow: 1; gap: 0.5rem; padding: 0.5rem; }
-.player-score { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #f8f9fa; border-radius: 12px; padding: 1rem; cursor: pointer; transition: background-color 0.2s, color 0.2s; }
-.player-score:active { background-color: #e9ecef; }
-.player-info { text-align: center; margin-bottom: 0.5rem; }
-.player-name { font-size: 1.5rem; font-weight: 700; color: #212529; }
-.player-name.blue { font-size: 1.5rem; font-weight: 700; color: #2d0ddf; }
-.player-name.red { font-size: 1.5rem; font-weight: 700; color: #e11d48; }
+.scoreboard-main-area {
+    display: flex;
+    flex-grow: 1;
+    gap: 1rem;
+    padding: 1rem;
+    overflow: hidden;
+}
+
+.player-score {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: #f8f9fa;
+    border-radius: 16px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 4px solid transparent;
+    position: relative;
+    overflow: hidden;
+}
+
+/* 블루팀/레드팀 전용 색상 */
+#player1Score .player-name, #score1 { color: #0d47a1 !important; }
+#player2Score .player-name, #score2 { color: #b71c1c !important; }
+
+/* 서브권자 강조 (Serving) */
+.player-score.serving {
+    border-color: #ffd700 !important;
+    background-color: #ffffff !important;
+    transform: scale(1.02);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    z-index: 5;
+}
+
+.player-info { text-align: center; margin-bottom: 0.2rem; }
+.player-name { font-size: 2.2rem; font-weight: 800; line-height: 1.2; }
 .set-score { font-size: 1rem; color: #6c757d; display: block; }
-.score-display { font-size: 10rem; font-weight: 900; color: #212529; line-height: 1; transition: color 0.2s; }
-.score-display.serve { color: #e11d48; }
+.score-display { font-size: 10rem; font-weight: 900; line-height: 1; margin: 0; }
 
 .control-buttons { display: flex; justify-content: space-around; padding: 0.5rem; background: #f8f9fa; border-top: 1px solid #dee2e6; }
 .control-btn { background: none; border: none; font-size: 1.5rem; padding: 0.5rem; cursor: pointer; border-radius: 50%; width: 50px; height: 50px; display: flex; justify-content: center; align-items: center; transition: background-color 0.2s; }
@@ -349,34 +380,9 @@ input:checked + .slider:before { transform: translateX(22px); }
     transition: background-color 0.3s;
     box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
-.modern-btn-mic:hover {
-    background-color: #b71c1c;
-}
-.modern-btn-mic.listening {
-    background-color: #28a745; /* 녹색 */
-    animation: pulse 1.5s infinite;
-}
-.highlight-text {
-    font-weight: bold;
-    color: #007bff;
-    font-size: 1.2em;
-}
-.voice-guide-area {
-    margin-top: 20px;
-}
-.chip-btn {
-    background-color: #e0e0e0;
-    color: #333;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 16px;
-    margin: 5px;
-    cursor: pointer;
-    font-size: 16px;
-}
-.chip-btn:hover {
-    background-color: #bdbdbd;
-}
+.modern-btn-mic.listening { background-color: #28a745; animation: pulse 1.5s infinite; }
+.highlight-text { font-weight: bold; color: #007bff; font-size: 1.2em; }
+.chip-btn { background-color: #e0e0e0; border: none; padding: 8px 16px; border-radius: 16px; margin: 5px; cursor: pointer; }
 
 /* --- 스코어보드 화면 음성인식 버튼 --- */
 #voiceControlBtn.active {
@@ -386,68 +392,58 @@ input:checked + .slider:before { transform: translateX(22px); }
 
 /* 펄스 애니메이션 */
 @keyframes pulse {
-    0% {
-        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
-    }
-    70% {
-        box-shadow: 0 0 0 15px rgba(40, 167, 69, 0);
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
-    }
+    0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+    70% { box-shadow: 0 0 0 15px rgba(40, 167, 69, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
 }
 
-/* --- 메인 메뉴 버튼 레이아웃 --- */
-.main-menu-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 20px;
-}
-.menu-btn {
-    background-color: #6c757d;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 8px;
-    font-size: 14px;
-    cursor: pointer;
-}
-.menu-btn:hover {
-    background-color: #5a6268;
-}
+/* --- Orientation Adjustments --- */
 
-
+/* Portrait Mode */
 @media (orientation: portrait) {
     .scoreboard-top-bar { display: flex; }
     .control-buttons { display: none; }
     .scoreboard-main-area { flex-direction: column; }
-    .player-name { font-size: 2rem; }
-    .set-score { font-size: 1.2rem; }
-    .score-display { font-size: 12rem; }
-    /* Ensure modal content fits in landscape and footer/buttons remain accessible */
-    .modal { align-items: flex-start; }
-    .modal-content { max-height: calc(100vh - 24px); }
-    .video-controls { flex-wrap: wrap; justify-content: center; }
+    .score-display { font-size: 30vh; }
+    .player-name { font-size: 3rem; }
 }
 
+/* Landscape Mode - Optimized for small height */
 @media (orientation: landscape) {
-    .scoreboard-top-bar { display: flex; }
+    .scoreboard-top-bar { display: flex; height: 10vh; padding: 0 1rem; }
     .control-buttons { display: none; }
-    .scoreboard-main-area { flex-direction: row; }
-    .player-name { font-size: 2rem; }
-    .set-score { font-size: 1.2rem; }
-    .score-display { font-size: 12rem; }
-    /* Ensure modal content fits in landscape and footer/buttons remain accessible */
-    .modal { align-items: flex-start; }
-    .modal-content { max-height: calc(100vh - 24px); }
-    .video-controls { flex-wrap: wrap; justify-content: center; }
+    .scoreboard-main-area {
+        flex-direction: row;
+        height: 90vh; /* 나머지 90%를 점수판이 차지 */
+        padding: 0.5rem 1rem;
+        gap: 1rem;
+        align-items: stretch;
+    }
+    .player-score {
+        padding: 0.5rem;
+        height: 100%;
+        justify-content: space-evenly; /* 이름과 점수 간격 균등 배분 */
+    }
+    .player-name {
+        font-size: 8vh !important;
+        margin-bottom: 0;
+    }
+    .set-score {
+        font-size: 4vh;
+    }
+    .score-display {
+        font-size: 50vh !important; /* 화면 높이의 절반 정도로 조절 */
+        line-height: 1;
+    }
+    /* 서브권 강조 시 확대 축소 (잘림 방지를 위해 배율 낮춤) */
+    .player-score.serving {
+        transform: scale(1.02);
+    }
 }
 
-#gameSelection, .modal { display: none; }
-.screen.active, .modal.active { display: flex; }
-/* 1. 모달 배경: 화면 전체를 덮고 자식을 정중앙에 배치 */
+/* --- Modals --- */
 .modal {
+    display: none;
     position: fixed;
     z-index: 1000;
     left: 0;
@@ -458,8 +454,9 @@ input:checked + .slider:before { transform: translateX(22px); }
     align-items: center;    /* 수직 중앙 정렬 */
     justify-content: center; /* 수평 중앙 정렬 */
     padding: 20px;          /* 화면 가장자리와 여유 공간 */
-    box-sizing: border-box; /* 패딩 포함 크기 계산 */
+
 }
+.modal.active { display: flex; }
 
 /* 2. 모달 컨텐츠: 내용물에 맞게 크기 조절 */
 .modal-content {
@@ -469,21 +466,12 @@ input:checked + .slider:before { transform: translateX(22px); }
     max-width: 400px;       /* 최대 너비 제한 */
     width: 90%;             /* 모바일에서 90% 너비 유지 */
     box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-    text-align: center;     /* 내부 텍스트 및 인라인 요소 중앙 정렬 */
-    box-sizing: border-box;
-    max-height: calc(100vh - 40px); overflow: auto;
+    text-align: center;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
 }
 
-/* 3. QR 코드 컨테이너: 내부 요소가 중앙에 오도록 */
-#qrcode {
-    margin: 1.5rem auto;    /* 상하 여백 및 좌우 중앙 정렬 */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: #fff;
-    padding: 10px;
-    border: 1px solid #eee;
-}
+#qrcode { margin: 1.5rem auto; display: flex; justify-content: center; background: #fff; padding: 10px; border: 1px solid #eee; }
 
 /* 하단 버튼 스타일 */
 .modal-action {
@@ -496,71 +484,25 @@ input:checked + .slider:before { transform: translateX(22px); }
     color: white;
     border-radius: 6px;
 }
+.modal-action.destructive { background: #ff4d4d; }
 
-/* --- Data List Styles --- */
-.saved-name-item, .picker-name-item { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border-bottom: 1px solid #e9ecef; cursor: pointer; }
-.delete-btn { background: #ff4d4d; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; }
+/* --- Data Item Styles --- */
+.history-item { background: #f8f9fa; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; text-align: left; }
+.history-item-header { display: flex; justify-content: space-between; font-weight: bold; }
+.history-item-body { margin-top: 0.5rem; }
+.player-card { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 12px; margin-bottom: 8px; text-align: left; }
 
-.history-item { background: #f8f9fa; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; cursor: pointer; }
-.history-item-header { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 0.5rem; }
-.history-item-body p { margin: 0.25rem 0; }
-.history-memo { font-style: italic; color: #6c757d; }
-
-#videoReviewModal .modal-content, #historyDetailModal .modal-content {
-    width: 100%;
-    max-width: 600px;
-}
-
-.player-input-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 8px;
-    border-radius: 6px;
-}
-
-.player-input-group label {
-    font-weight: 600;
-    min-width: 60px;
-}
-
-.player-input-group input {
-    flex: 1;
-    padding: 4px 8px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-}
-
-/* 블루팀 배경색 */
-.player-input-group.blue-team {
-    background-color: #e3f2fd;      /* 연한 파랑 */
-}
-.player-input-group.blue-team label {
-    color: #0d47a1;
-}
-
-/* 레드팀 배경색 */
-.player-input-group.red-team {
-    background-color: #ffebee;      /* 연한 빨강 */
-}
-.player-input-group.red-team label {
-    color: #b71c1c;
-}
+.player-input-group.blue-team { background-color: #e3f2fd; padding: 8px; border-radius: 8px; }
+.player-input-group.blue-team label { color: #0d47a1; font-weight: 600; }
+.player-input-group.red-team { background-color: #ffebee; padding: 8px; border-radius: 8px; }
+.player-input-group.red-team label { color: #b71c1c; font-weight: 600; }
 
 .player-btn {
-    padding: 6px 10px;        /* 여백 동일 */
-    margin-right: 6px;        /* 간격 동일 */
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    font-size: 14px;
     cursor: pointer;
-    border: 1px solid #ccc;   /* 테두리 동일 */
-    border-radius: 4px;       /* 모서리 동일 */
-    background-color: #fff;   /* 배경 동일 */
-    font-size: 14px;          /* 글자 크기 동일 */
-    line-height: 1.2;         /* 줄 높이 */
 }
-
-.player-btn.delete {
-    color: red;               /* 삭제 버튼만 글자색만 변경 */
-}
-.player-btn:hover {
-    background-color: #f0f0f0; /* 호버 시 배경색 동일 */
-}
+.player-btn.delete { color: #d32f2f; border-color: #d32f2f; }

@@ -84,12 +84,13 @@ body {
 }
 
 .end-btn {
-    background: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    color: white;
-    padding: 0.75rem 1.5rem;
-    border-radius: 20px;
+    padding: 10px 24px;
+    font-size: 1rem;
+    font-weight: 600;
     cursor: pointer;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff;
     transition: all 0.2s ease;
 }
 
@@ -97,6 +98,12 @@ body {
     background: rgba(255, 255, 255, 0.3);
 }
 
+/* 강조 버튼 (New Game) */
+.end-btn.primary {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
 /* Scrollable lists within modals */
 #historyList, #savedNamesList, #pickerNamesList {
     overflow-y: auto;
