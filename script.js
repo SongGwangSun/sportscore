@@ -2331,6 +2331,13 @@ function showPlayerStats(playerName) {
     const summaryEl = document.getElementById('playerStatsSummary');
     if (summaryEl) {
         // keep existing text and append table
+        console.log('1 summaryEl.textContent:', summaryEl.textContent);
+        console.log('1 summaryEl.innerHTML:', summaryEl.innerHTML);
+        if(summaryEL.textContent.trim() === '') summaryEl.innerHTML = tableHtml;
+        else summaryEl.innerHTML += tableHtml;
+    } else {
+        console.log('2 summaryEl.textContent:', summaryEl.textContent);
+        console.log('2 summaryEl.innerHTML:', summaryEl.innerHTML);
         const existing = summaryEl.textContent || '';
         summaryEl.innerHTML = `${existing}${tableHtml}`;
     }

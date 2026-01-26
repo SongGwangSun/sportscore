@@ -161,6 +161,8 @@ window.stopRecording = function () {
 
 window.onVoiceReady = function () {
     console.log("Voice recognizer is ready.");
+    notifyGameStart();
+//    alert("음성인식이 준비 되었습니다.");
     // 필요하다면, '준비 완료' UI 피드백을 줄 수 있음
 };
 
@@ -171,18 +173,23 @@ window.onPartialVoiceResult = function (text) {
     }
 };
 
-window.onVoiceResult = function (text) {
+window.onVoiceResult = function(textin) {
     console.log("Final voice result:", text);
     const voiceTestBtn = document.getElementById('voiceTestBtn');
     const recognizedWordSpan = document.getElementById('recognizedWord');
 
+    let text = textin.replace(/\s/g, '').toLowerCase();
+
     // 테스트 화면 처리
     if (document.getElementById('voiceSettings').classList.contains('active')) {
         // if (text.includes("원포인트") || text.includes("투포인트") || text.includes("1.") || text.includes("2.") || text.includes("1 포인트") || text.includes("2 포인트")) {
-        if (text.includes("블루팀") || text.includes("레드팀") || text.includes("블루 팀") || text.includes("레드 팀")) {
+        if (text.includes("블루팀") || text.includes("레드팀") ||
+            text.includes("청팀승") || text.includes("홍팀승") ||
+            text.includes("blueteam") || text.includes("redtem") ||
+            text.includes("blueteamwins") || text.includes("redteamwins") ) {
             recognizedWordSpan.textContent = text + " : OK";
             recognizedWordSpan.style.color = "green";
-        } else {
+        }else{
             recognizedWordSpan.style.color = "red";
             recognizedWordSpan.textContent = text;
         }
@@ -194,12 +201,12 @@ window.onVoiceResult = function (text) {
     // 스코어보드 화면 처리
     if (document.getElementById('scoreboard').classList.contains('active') && useVoiceRecognition) {
         // if (text.includes("원포인트") || text.includes("원 포인트") || text.includes("일팀") || text.includes("1 포인트")) {
-        if (text.includes("블루팀") || text.includes("블루 팀")) {
+        if (text.includes("블루팀") || text.includes("청팀승") || text.includes("blueteam") || text.includes("blueteamwins")) {
             handleRallyWonBy(1);
             // TTS로 피드백 (선택사항)
             //            if (gameState.useSTT) speakScore();
-            // } else if (text.includes("투포인트") || text.includes("두포인트") || text.includes("두 포인트") || text.includes("투 포인트") || text.includes("2.") || text.includes("2 포인트")) {
-        } else if (text.includes("레드팀") || text.includes("레드 팀")) {
+        // } else if (text.includes("투포인트") || text.includes("두포인트") || text.includes("두 포인트") || text.includes("투 포인트") || text.includes("2.") || text.includes("2 포인트")) {
+        } else if (text.includes("레드팀")|| text.includes("홍팀승") || text.includes("redtem") || text.includes("redteamwins")) {
             handleRallyWonBy(2);
             // TTS로 피드백 (선택사항)
             //            if (gameState.useSTT) speakScore();
@@ -930,6 +937,7 @@ function checkAutoCourtChange() {
 
 function notifyServeChange() { speakNarration('serveChange'); const notification = document.getElementById('gameNotification'); if (notification) { notification.textContent = "서브권 변경\nChange serve"; notification.classList.add('show'); setTimeout(() => notification.classList.remove('show'), 1500); } }
 function notifyCourtChange() { speakNarration('courtChange'); const notification = document.getElementById('gameNotification'); if (notification) { notification.textContent = "코트 변경\nChange courts!"; notification.classList.add('show'); setTimeout(() => notification.classList.remove('show'), 1500); } }
+function notifyGameStart() { speakNarration('gameStart'); const notification = document.getElementById('gameNotification'); if (notification) { notification.textContent = "게임 시작\nGame Start!"; notification.classList.add('show'); setTimeout(() => notification.classList.remove('show'), 1500); } }
 
 // --- 5. GAME SETUP & CONTROL ---
 async function startGame() {
