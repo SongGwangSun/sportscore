@@ -110,7 +110,6 @@ let gameState = {
     scoreHistory: [],
     gameStartTime: null,
     isRecording: false,
-    useSTT: false,
     setMemo: '',
     selectedLang: 'ko-KR',
     voiceName: '',
@@ -258,7 +257,7 @@ function onQrCodeScanned(qrData) {
         // const newRecord = JSON.parse(decoded);
         const decompressedString = LZString.decompressFromBase64(qrData);
         const newRecord = JSON.parse(decompressedString);
-        console.log("복원:", newRecord); // 원본과 동일
+//        console.log("복원:", newRecord); // 원본과 동일
 
         if (!newRecord || !newRecord.id) {
             alert("유효하지 않은 QR 코드입니다. This is an invalid QR code.");
@@ -309,17 +308,23 @@ function shareHistoryEntry(id) {
         const qr = qrcode(0, 'M');
 
         const jsonString = JSON.stringify(r); // 문자열화 (예: ~100바이트)
-        console.log("원본 :", jsonString); // 보통 50-70% 감소
+//        console.log("원본 :", jsonString); // 보통 50-70% 감소
 
         const compressed = LZString.compressToBase64(jsonString);
-        console.log("압축 크기:", compressed.length); // 보통 50-70% 감소
-        console.log("압축 결과:", compressed);
+//        console.log("압축 크기:", compressed.length); // 보통 50-70% 감소
+//        console.log("압축 결과:", compressed);
 
 
         qr.addData(compressed);
         // qr.addData(utf8_to_b64(JSON.stringify(r)));
         qr.make();
-        container.innerHTML = qr.createImgTag(5, 0);  // Cell size, high space
+        container.innerHTML = qr.createImgTag(5, 2);  // Cell size, high space
+        // 4. 중앙 정렬 및 반응형 보정 (중요)
+        const qrImg = container.querySelector('img');
+        qrImg.style.maxWidth = '100%';    // 부모 너비를 넘지 않도록
+        qrImg.style.height = 'auto';     // 비율 유지
+        qrImg.style.display = 'block';   // 인라인 여백 제거
+        qrImg.style.margin = '0 auto';   // 수평 중앙 정렬
         document.getElementById('qrCodeModal').classList.add('active');
     } catch (e) {
         alert("QR 생성 실패: 데이터가 너무 많습니다.");
@@ -949,7 +954,7 @@ async function startGame() {
         await startCamera(true);
     }
     const voiceRecToggle = document.getElementById('voiceRecToggle'); // 새로 추가
-    gameState.useSTT = voiceRecToggle.checked;
+//    gameState.useSTT = voiceRecToggle.checked;
     useVoiceRecognition = voiceRecToggle.checked; // 새로 추가
     // 음성인식 사용 여부에 따라 스코어보드 버튼 보이기/숨기기
     const voiceControlBtn = document.getElementById('voiceControlBtn');
