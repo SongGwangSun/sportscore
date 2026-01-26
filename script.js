@@ -2329,10 +2329,11 @@ function showPlayerStats(playerName) {
     const tableHtml = `\n<table style="border-collapse:collapse;margin-top:8px;width:100%;font-size:0.95rem">` +
         `<thead><tr><th style="text-align:left;padding:6px 8px">종목</th><th style="text-align:left;padding:6px 8px">승 색상</th><th style="text-align:left;padding:6px 8px">패 색상</th></tr></thead><tbody>${colorTableRows}</tbody></table>`;
     const summaryEl = document.getElementById('playerStatsSummary');
+
     if (summaryEl) {
         // keep existing text and append table
-        console.log('1 summaryEl.textContent:', summaryEl.textContent);
-        console.log('1 summaryEl.innerHTML:', summaryEl.innerHTML);
+        // console.log('1 summaryEl.textContent:', summaryEl.textContent);
+        // console.log('1 summaryEl.innerHTML:', summaryEl.innerHTML);
         if(summaryEl.textContent.trim() === '') 
         {
             const existing = summaryEl.textContent || '';
