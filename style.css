@@ -403,7 +403,13 @@ input:checked + .slider:before { transform: translateX(22px); }
 @media (orientation: portrait) {
     .scoreboard-top-bar { display: flex; }
     .control-buttons { display: none; }
-    .scoreboard-main-area { flex-direction: column; }
+    .scoreboard-main-area {
+        display: flex;
+        flex-direction: column;
+        /* dvh(Dynamic Viewport Height)는 주소창 등을 제외한 실제 높이를 반영합니다 */
+        height: 90dvh; 
+        overflow: hidden; /* 절대 밖으로 나가지 않게 차단 */
+    }   
     .score-display { font-size: 30vh; }
     .player-name { font-size: 3rem; }
 }
