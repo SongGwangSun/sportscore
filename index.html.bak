@@ -178,7 +178,7 @@
     <div class="player-input-group blue-team">
         <label for="playerReg1">청팀(BlueTeam)</label>
         <input type="text" id="playerReg1"
-               placeholder="청팀(BlueTeam)" maxlength="20">
+               placeholder="청팀(BlueTeam)" maxlength="40">
         <button class="list-btn" onclick="openPlayerNamesPicker('playerReg1')">📖</button>
     </div>
 
@@ -186,7 +186,7 @@
     <div class="player-input-group red-team">
         <label for="playerReg2">홍팀(RedTeam)</label>
         <input type="text" id="playerReg2"
-               placeholder="홍팀(RedTeam)" maxlength="20">
+               placeholder="홍팀(RedTeam)" maxlength="40">
         <button class="list-btn" onclick="openPlayerNamesPicker('playerReg2')">📖</button>
     </div>
             <button class="apply-btn" onclick="applyPlayerNames()">이름 적용(Apply name)</button>

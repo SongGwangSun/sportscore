@@ -156,7 +156,6 @@ const sportPresets = {
 window.stopRecording = function () {
     console.log("video stop.");
     isStoppingFromBackground = true;
-    // 필요하다면, '준비 완료' UI 피드백을 줄 수 있음
 };
 
 window.onVoiceReady = function () {
@@ -814,8 +813,8 @@ function showEndScreen(winner) {
 
             if (videoUrl) {
                 // use dedicated end-of-game modal so Save/Cancel are available
-                const reviewEl = document.getElementById('endGameReviewVideo') || document.getElementById('reviewVideo');
-                if (reviewEl) reviewEl.src = videoUrl;
+                //const reviewEl = document.getElementById('endGameReviewVideo') || document.getElementById('reviewVideo');
+                //if (reviewEl) reviewEl.src = videoUrl;
                 const endModal = document.getElementById('endGameVideoModal');
                 if (endModal) {
                     endModal.classList.add('active');
@@ -1262,10 +1261,10 @@ function startRecording() {
             gameState.lastRecordedUrl = videoUrl;
             gameState.hasRecordedBlob = true;
             // review modal (existing UI)
-            const reviewEl = document.getElementById('reviewVideo');
-            if (reviewEl) reviewEl.src = videoUrl;
-            const reviewModal = document.getElementById('videoReviewModal');
-            if (reviewModal) reviewModal.classList.add('active');
+            //const reviewEl = document.getElementById('reviewVideo');
+            //if (reviewEl) reviewEl.src = videoUrl;
+            //const reviewModal = document.getElementById('videoReviewModal');
+            //if (reviewModal) reviewModal.classList.add('active');
             // test panel download link
             const dl = document.getElementById('downloadLinkTest');
             if (dl) {
