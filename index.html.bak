@@ -379,7 +379,7 @@
         <!--        <button class="modal-close" onclick="closeAboutModal()" aria-label="닫기(Close)">&times;-->
         <!--        </button>-->
         <h2>SportScore</h2>
-        <p>버전(Version): <strong>v1.5</strong></p>
+        <p>버전(Version): <strong>v1.6</strong></p>
         <p>제작(creation): <strong>song2ne</strong></p>
         <p>문의(Inquiry): <a href="mailto:songgs@song2nes.com">songgs@song2nes.com</a></p>
         <div class="modal-footer">

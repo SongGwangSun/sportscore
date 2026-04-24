@@ -146,12 +146,10 @@ const gameRules = {
     pickleball: { title: "피클볼(PickleBall) 규칙", image: "images/pickleball.webp", description: `<h3>서브 <span class="eng-text">(Service)</span></h3>  <p>    서브는 언더핸드로, 대각선 방향으로 넣어야 하며, 논-발리 존(키친)에 들어가면 안 됩니다.    <span class="eng-text">The service must be underhand, delivered diagonally, and must not land in the non-volley zone (the kitchen).</span>  </p>    <h3>점수 <span class="eng-text">(Scoring)</span></h3>  <ul>    <li>      서브권을 가진 팀만 득점할 수 있습니다.      <span class="eng-text">Only the serving team can score points.</span>    </li>    <li>      한 게임은 11점을 먼저 얻는 쪽이 승리합니다.      <span class="eng-text">A game is won by the side that first scores 11 points.</span>    </li>    <li>      10-10 동점일 경우, 2점 차이가 날 때까지 경기를 계속합니다.      <span class="eng-text">In case of a 10-10 tie, the game continues until one side has a 2-point lead.</span>    </li>  </ul>` }
 };
 
-const sportPresets = {
-    badminton: 21,
-    pingpong: 11,
-    jokgu: 15,
-    pickleball: 11
-};
+const sportPresets = { badminton: 21, pingpong: 11, jokgu: 15, pickleball: 11 };
+const voicecmd1 = ["청팀", "청 팀", "블루", "Blue"];
+const voicecmd2 = ["홍팀", "홍 팀", "레드", "Red"];
+
 // --- 안드로이드로부터 호출될 전역 함수 정의 ---
 window.stopRecording = function () {
     console.log("video stop.");
@@ -182,13 +180,15 @@ window.onVoiceResult = function(textin) {
     // 테스트 화면 처리
     if (document.getElementById('voiceSettings').classList.contains('active')) {
         // if (text.includes("원포인트") || text.includes("투포인트") || text.includes("1.") || text.includes("2.") || text.includes("1 포인트") || text.includes("2 포인트")) {
-        if (text.includes("블루팀") || text.includes("레드팀") ||
-            text.includes("청팀승") || text.includes("홍팀승") ||
-            text.includes("blueteam") || text.includes("redtem") ||
-            text.includes("blueteamwins") || text.includes("redteamwins") ) {
+        const isMatch =
+            voicecmd1.some(cmd => text.includes(cmd)) ||
+            voicecmd2.some(cmd => text.includes(cmd));
+
+        if (isMatch) {
             recognizedWordSpan.textContent = text + " : OK";
             recognizedWordSpan.style.color = "green";
-        }else{
+        }
+       else{
             recognizedWordSpan.style.color = "red";
             recognizedWordSpan.textContent = text;
         }
@@ -199,16 +199,10 @@ window.onVoiceResult = function(textin) {
 
     // 스코어보드 화면 처리
     if (document.getElementById('scoreboard').classList.contains('active') && useVoiceRecognition) {
-        // if (text.includes("원포인트") || text.includes("원 포인트") || text.includes("일팀") || text.includes("1 포인트")) {
-        if (text.includes("블루팀") || text.includes("청팀승") || text.includes("blueteam") || text.includes("blueteamwins")) {
+        if (voicecmd1.some(cmd => text.includes(cmd))) {
             handleRallyWonBy(1);
-            // TTS로 피드백 (선택사항)
-            //            if (gameState.useSTT) speakScore();
-        // } else if (text.includes("투포인트") || text.includes("두포인트") || text.includes("두 포인트") || text.includes("투 포인트") || text.includes("2.") || text.includes("2 포인트")) {
-        } else if (text.includes("레드팀")|| text.includes("홍팀승") || text.includes("redtem") || text.includes("redteamwins")) {
+        } else if (voicecmd2.some(cmd => text.includes(cmd))) {
             handleRallyWonBy(2);
-            // TTS로 피드백 (선택사항)
-            //            if (gameState.useSTT) speakScore();
         }
         // 점수 처리 후 다시 음성인식 시작
         if (isVoiceListening && window.AndroidInterface?.startVoiceRecognition) {

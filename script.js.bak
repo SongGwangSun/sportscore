@@ -1261,10 +1261,10 @@ function startRecording() {
             gameState.lastRecordedUrl = videoUrl;
             gameState.hasRecordedBlob = true;
             // review modal (existing UI)
-            const reviewEl = document.getElementById('reviewVideo');
-            if (reviewEl) reviewEl.src = videoUrl;
-            const reviewModal = document.getElementById('videoReviewModal');
-            if (reviewModal) reviewModal.classList.add('active');
+            //const reviewEl = document.getElementById('reviewVideo');
+            //if (reviewEl) reviewEl.src = videoUrl;
+            //const reviewModal = document.getElementById('videoReviewModal');
+            //if (reviewModal) reviewModal.classList.add('active');
             // test panel download link
             const dl = document.getElementById('downloadLinkTest');
             if (dl) {
