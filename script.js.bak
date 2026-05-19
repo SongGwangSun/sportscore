@@ -107,6 +107,9 @@ let gameState = {
     setScores: [],
     pn1: 'Blue Team',
     pn2: 'Red Team',
+    // 각 플레이어의 초기 컬러 저장 (blue 또는 red)
+    player1InitialColor: 'blue',
+    player2InitialColor: 'red',
     scoreHistory: [],
     gameStartTime: null,
     isRecording: false,
@@ -117,6 +120,7 @@ let gameState = {
     pitch: 1,
     currentServer: 1,
     midSetCourtChanged: false,
+    courtSwapped: false, // 코트 교환 상태 추적
     currentGameId: null,
 };
 
@@ -146,12 +150,10 @@ const gameRules = {
     pickleball: { title: "피클볼(PickleBall) 규칙", image: "images/pickleball.webp", description: `<h3>서브 <span class="eng-text">(Service)</span></h3>  <p>    서브는 언더핸드로, 대각선 방향으로 넣어야 하며, 논-발리 존(키친)에 들어가면 안 됩니다.    <span class="eng-text">The service must be underhand, delivered diagonally, and must not land in the non-volley zone (the kitchen).</span>  </p>    <h3>점수 <span class="eng-text">(Scoring)</span></h3>  <ul>    <li>      서브권을 가진 팀만 득점할 수 있습니다.      <span class="eng-text">Only the serving team can score points.</span>    </li>    <li>      한 게임은 11점을 먼저 얻는 쪽이 승리합니다.      <span class="eng-text">A game is won by the side that first scores 11 points.</span>    </li>    <li>      10-10 동점일 경우, 2점 차이가 날 때까지 경기를 계속합니다.      <span class="eng-text">In case of a 10-10 tie, the game continues until one side has a 2-point lead.</span>    </li>  </ul>` }
 };
 
-const sportPresets = {
-    badminton: 21,
-    pingpong: 11,
-    jokgu: 15,
-    pickleball: 11
-};
+const sportPresets = { badminton: 21, pingpong: 11, jokgu: 15, pickleball: 11 };
+const voicecmd1 = ["청팀", "청 팀", "블루", "Blue"];
+const voicecmd2 = ["홍팀", "홍 팀", "레드", "Red"];
+
 // --- 안드로이드로부터 호출될 전역 함수 정의 ---
 window.stopRecording = function () {
     console.log("video stop.");
@@ -182,13 +184,15 @@ window.onVoiceResult = function(textin) {
     // 테스트 화면 처리
     if (document.getElementById('voiceSettings').classList.contains('active')) {
         // if (text.includes("원포인트") || text.includes("투포인트") || text.includes("1.") || text.includes("2.") || text.includes("1 포인트") || text.includes("2 포인트")) {
-        if (text.includes("블루팀") || text.includes("레드팀") ||
-            text.includes("청팀승") || text.includes("홍팀승") ||
-            text.includes("blueteam") || text.includes("redtem") ||
-            text.includes("blueteamwins") || text.includes("redteamwins") ) {
+        const isMatch =
+            voicecmd1.some(cmd => text.includes(cmd)) ||
+            voicecmd2.some(cmd => text.includes(cmd));
+
+        if (isMatch) {
             recognizedWordSpan.textContent = text + " : OK";
             recognizedWordSpan.style.color = "green";
-        }else{
+        }
+       else{
             recognizedWordSpan.style.color = "red";
             recognizedWordSpan.textContent = text;
         }
@@ -199,16 +203,10 @@ window.onVoiceResult = function(textin) {
 
     // 스코어보드 화면 처리
     if (document.getElementById('scoreboard').classList.contains('active') && useVoiceRecognition) {
-        // if (text.includes("원포인트") || text.includes("원 포인트") || text.includes("일팀") || text.includes("1 포인트")) {
-        if (text.includes("블루팀") || text.includes("청팀승") || text.includes("blueteam") || text.includes("blueteamwins")) {
+        if (voicecmd1.some(cmd => text.includes(cmd))) {
             handleRallyWonBy(1);
-            // TTS로 피드백 (선택사항)
-            //            if (gameState.useSTT) speakScore();
-        // } else if (text.includes("투포인트") || text.includes("두포인트") || text.includes("두 포인트") || text.includes("투 포인트") || text.includes("2.") || text.includes("2 포인트")) {
-        } else if (text.includes("레드팀")|| text.includes("홍팀승") || text.includes("redtem") || text.includes("redteamwins")) {
+        } else if (voicecmd2.some(cmd => text.includes(cmd))) {
             handleRallyWonBy(2);
-            // TTS로 피드백 (선택사항)
-            //            if (gameState.useSTT) speakScore();
         }
         // 점수 처리 후 다시 음성인식 시작
         if (isVoiceListening && window.AndroidInterface?.startVoiceRecognition) {
@@ -278,6 +276,10 @@ function onQrCodeScanned(qrData) {
         console.log('checkAndAdd 1: ' + newRecord.pn1);
         // 선수 자동 추가 로직 (데이터 무결성 및 다운 방지)
         const checkAndAdd = (name) => {
+        // [수정] 데이터 길이 제한 및 정규화
+        newRecord.pn1 = (newRecord.pn1 || "Player 1").substring(0, 40);
+        newRecord.pn2 = (newRecord.pn2 || "Player 2").substring(0, 40);
+        if (newRecord.memo) newRecord.memo = newRecord.memo.substring(0, 40);
             if (name && !players.some(p => p.name === name)) {
                 players.push({ name: name, wins: 0, losses: 0, history: [] });
             }
@@ -690,6 +692,40 @@ function updateScoreboard() {
     document.getElementById('player2SetsInline').textContent = gameState.player2Sets;
     document.querySelector('#player1Score .player-name').textContent = gameState.pn1;
     document.querySelector('#player2Score .player-name').textContent = gameState.pn2;
+    
+    // 팀명에 따라 초기 컬러 결정 (처음 한 번만)
+    // const team1Name = gameState.pn1 || 'BlueTeam';
+    // const team2Name = gameState.pn2 || 'RedTeam';
+    
+    // if (!gameState.player1InitialColor) {
+    //     gameState.player1InitialColor = (team1Name[0] === team1Name[0].toUpperCase()) ? 'blue' : 'red';
+    // }
+    // if (!gameState.player2InitialColor) {
+    //     gameState.player2InitialColor = (team2Name[0] === team2Name[0].toUpperCase()) ? 'blue' : 'red';
+    // }
+    
+    // // 초기 컬러 적용
+    // const color1 = gameState.player1InitialColor;
+    // const color2 = gameState.player2InitialColor;
+    
+    // const blueColor = '#0d47a1';
+    // const redColor = '#b71c1c';
+    
+    // const p1Container = document.getElementById('player1Score');
+    // const p2Container = document.getElementById('player2Score');
+    // const p1Name = document.querySelector('#player1Score .player-name');
+    // const p2Name = document.querySelector('#player2Score .player-name');
+    // const p1Score = document.getElementById('score1');
+    // const p2Score = document.getElementById('score2');
+    
+    // // 초기 컬러로 고정
+    // p1Container.style.backgroundColor = color1 === 'blue' ? '#e3f2fd' : '#ffebee';
+    // p2Container.style.backgroundColor = color2 === 'blue' ? '#e3f2fd' : '#ffebee';
+    // p1Name.style.color = color1 === 'blue' ? blueColor : redColor;
+    // p2Name.style.color = color2 === 'blue' ? blueColor : redColor;
+    // p1Score.style.color = color1 === 'blue' ? blueColor : redColor;
+    // p2Score.style.color = color2 === 'blue' ? blueColor : redColor;
+    
     updateServeColor();
 }
 //function updateServeColor() { const s1 = document.getElementById('score1'); const s2 = document.getElementById('score2'); s1.classList.remove('serve'); s2.classList.remove('serve'); if (gameState.currentServer === 1) s1.classList.add('serve'); else s2.classList.add('serve'); }
@@ -712,19 +748,106 @@ function updateServeColor() {
 function updateTeamColor(isAuto = false) {
     const s1 = document.getElementById('pn1'); 
     const s2 = document.getElementById('pn2'); 
-    s1.classList.remove('blue'); 
-    s2.classList.remove('red'); 
-    s1.classList.remove('red');
-    s2.classList.remove('blue');
-    if (isAuto) {
-        s1.classList.add('blue'); 
-        s2.classList.add('red'); 
+    
+    // 1. 색상 결정 로직: 이미 값이 있다면 재계산하지 않음
+    if (!gameState.player1InitialColor || !gameState.player2InitialColor) {
+        const team1Name = gameState.pn1 || 'BlueTeam';
+        const team2Name = gameState.pn2 || 'RedTeam';
+        gameState.player1InitialColor = (team1Name[0] === team1Name[0].toUpperCase()) ? 'blue' : 'red';
+        gameState.player2InitialColor = (team2Name[0] === team2Name[0].toUpperCase()) ? 'blue' : 'red';
     }
-    else{
-        s1.classList.add('red'); 
-        s2.classList.add('blue'); 
+    
+    // 2. 적용할 색상 확정
+    const color1 = gameState.player1InitialColor;
+    const color2 = gameState.player2InitialColor;
+    
+    const blueColor = '#0d47a1';
+    const redColor = '#b71c1c';
+
+    // 3. UI 적용 (이 로직은 데이터가 바뀌었을 때 '현재 슬롯'에 할당된 색상을 입히기만 함)
+    applyStyle(s1, color1);
+    applyStyle(s2, color2);
+}
+
+// 중복 코드를 줄이기 위한 헬퍼 함수
+function applyStyle(element, color) {
+    const colorValue = (color === 'blue') ? '#0d47a1' : '#b71c1c';
+    
+    element.classList.remove('blue', 'red');
+    element.classList.add(color);
+    element.style.color = colorValue;
+    
+    const container = element.closest('.player-score');
+    if (container) 
+    {
+        container.classList.remove('blue', 'red');
+        container.classList.add(color);
+        container.style.borderColor = colorValue;
+    }
+    
+    // ID 기반 점수판 색상 업데이트
+    const scoreId = element.id === 'pn1' ? 'score1' : 'score2';
+    const scoreEl = document.getElementById(scoreId);
+    if (scoreEl) 
+    {
+        scoreEl.classList.remove('blue', 'red');
+        scoreEl.classList.add(color);
+        scoreEl.style.color = colorValue;
     }
 }
+// function updateTeamColor(isAuto = false) {
+//     const s1 = document.getElementById('pn1'); 
+//     const s2 = document.getElementById('pn2'); 
+    
+//     // 팀명에 따라 blue/red 결정 (첫 글자가 대문자면 blue, 소문자면 red)
+//     const team1Name = gameState.pn1 || 'BlueTeam';
+//     const team2Name = gameState.pn2 || 'RedTeam';
+    
+//     // 초기 컬러가まだ設定されていない場合は決定
+//     if (!gameState.player1InitialColor) {
+//         gameState.player1InitialColor = (team1Name[0] === team1Name[0].toUpperCase()) ? 'blue' : 'red';
+//     }
+//     if (!gameState.player2InitialColor) {
+//         gameState.player2InitialColor = (team2Name[0] === team2Name[0].toUpperCase()) ? 'blue' : 'red';
+//     }
+    
+//     // 초기 컬러 사용 (코트 체인지해도 유지)
+//     const color1 = gameState.player1InitialColor;
+//     const color2 = gameState.player2InitialColor;
+    
+//     // 모든 클래스 제거
+//     s1.classList.remove('blue', 'red'); 
+//     s2.classList.remove('blue', 'red'); 
+    
+//     // 초기 컬러 클래스 추가
+//     s1.classList.add(color1); 
+//     s2.classList.add(color2); 
+    
+//     // 색상 적용
+//     const blueColor = '#0d47a1';
+//     const redColor = '#b71c1c';
+    
+//     s1.style.color = color1 === 'blue' ? blueColor : redColor;
+//     s2.style.color = color2 === 'blue' ? blueColor : redColor;
+    
+//     // 부모 요소에도 컬러 적용
+//     const p1Container = s1.closest('.player-score');
+//     const p2Container = s2.closest('.player-score');
+//     if (p1Container) {
+//         p1Container.style.borderColor = color1 === 'blue' ? blueColor : redColor;
+//     }
+//     if (p2Container) {
+//         p2Container.style.borderColor = color2 === 'blue' ? blueColor : redColor;
+//     }
+    
+//     // 점수 영역에도 컬러 적용
+//     const score1El = document.getElementById('score1');
+//     const score2El = document.getElementById('score2');
+//     if (score1El) score1El.style.color = color1 === 'blue' ? blueColor : redColor;
+//     if (score2El) score2El.style.color = color2 === 'blue' ? blueColor : redColor;
+    
+//     console.log(`[팀컬러] ${team1Name}(${color1}) vs ${team2Name}(${color2})`);
+// }
 function showEndScreen(winner) {
     //console.log('showEndScreen: start.');
     const gameEndScreen = document.getElementById('gameEnd');
@@ -923,16 +1046,16 @@ function checkSetWin() {
 }
 
 function checkGameWin() { const setsToWin = Math.ceil(gameState.totalSets / 2); if (gameState.player1Sets >= setsToWin) { showEndScreen(1); return true; } if (gameState.player2Sets >= setsToWin) { showEndScreen(2); return true; } return false; }
-function resetSet() { gameState.player1Score = 0; gameState.player2Score = 0; gameState.scoreHistory = []; gameState.midSetCourtChanged = false; updateScoreboard(); speakNarration('setReset'); }
+function resetSet() { gameState.player1Score = 0; gameState.player2Score = 0; gameState.scoreHistory = []; gameState.midSetCourtChanged = false; gameState.courtSwapped = false; updateScoreboard(); speakNarration('setReset'); }
 function undoLastScore() { if (gameState.scoreHistory.length > 1) { gameState.scoreHistory.pop(); const last = gameState.scoreHistory[gameState.scoreHistory.length - 1]; gameState.player1Score = last.p1; gameState.player2Score = last.p2; gameState.currentServer = last.server; } else { gameState.player1Score = 0; gameState.player2Score = 0; gameState.scoreHistory = []; } updateScoreboard(); speakNarration('undo'); }
 function checkAutoCourtChange() {
     const isFinalSet = (gameState.player1Sets + gameState.player2Sets) === (gameState.totalSets - 1);
     const halfwayPoint = Math.ceil(gameState.winScore / 2);
-    if (gameState.midSetCourtChanged) return;
+    // if (gameState.midSetCourtChanged) return;
     let needsChange = false;
-    if (gameState.selectedGame === 'jokgu') {
-        if (gameState.player1Score === 8 || gameState.player2Score === 8) needsChange = true;
-    }
+    // if (gameState.selectedGame === 'jokgu') {
+    //     if (gameState.player1Score === 8 || gameState.player2Score === 8) needsChange = true;
+    // }
     if (isFinalSet) {
         if (gameState.player1Score === halfwayPoint || gameState.player2Score === halfwayPoint) needsChange = true;
     }
@@ -1026,12 +1149,17 @@ function switchCourt(isAuto = false) {
     [gameState.player1Score, gameState.player2Score] = [gameState.player2Score, gameState.player1Score];
     [gameState.player1Sets, gameState.player2Sets] = [gameState.player2Sets, gameState.player1Sets];
     [gameState.pn1, gameState.pn2] = [gameState.pn2, gameState.pn1];
+    [gameState.player1InitialColor, gameState.player2InitialColor] = [gameState.player2InitialColor, gameState.player1InitialColor];
+    // 코트 상태 토글
+    gameState.courtSwapped = !gameState.courtSwapped;
+    
+    // 코트 체인지 시 초기 컬러 유지 (updateTeamColor 호출 안 함)
     updateScoreboard();
+    updateTeamColor(true);
     if (!isAuto) {
         gameState.currentServer = gameState.currentServer == 1 ? 2 : 1;
         updateServeColor(); notifyCourtChange(); speakNarration('courtSwap');
     }
-    updateTeamColor();
 }
 function showGameSelection() {
     const gameEndScreen = document.getElementById('gameEnd');

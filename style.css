@@ -335,10 +335,6 @@ input:checked + .slider:before { transform: translateX(22px); }
     overflow: hidden;
 }
 
-/* 블루팀/레드팀 전용 색상 */
-#player1Score .player-name, #score1 { color: #0d47a1 !important; }
-#player2Score .player-name, #score2 { color: #b71c1c !important; }
-
 /* 서브권자 강조 (Serving) */
 .player-score.serving {
     border-color: #ffd700 !important;
